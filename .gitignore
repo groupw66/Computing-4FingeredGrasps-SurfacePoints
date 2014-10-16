@@ -26,3 +26,15 @@
 *.exe
 *.out
 *.app
+
+# Temporary files
+*~
+
+# Code::Blocks
+*.depend
+*.layout
+
+# Folder
+bin/
+obj/
+meshes/
