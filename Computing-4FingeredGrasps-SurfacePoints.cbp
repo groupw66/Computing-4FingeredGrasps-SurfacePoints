@@ -13,6 +13,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add directory="include" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -22,6 +23,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="include" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -43,10 +45,20 @@
 			<Add option="-lgomp" />
 			<Add option="-lUnitTest++" />
 		</Linker>
+		<Unit filename="include/OBJFile.cpp" />
+		<Unit filename="include/OBJFile.h" />
+		<Unit filename="include/PositionsNormalsFile.cpp" />
+		<Unit filename="include/PositionsNormalsFile.h" />
+		<Unit filename="include/SurfacePoint.cpp" />
+		<Unit filename="include/SurfacePoint.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="test/TestOBJFile.cpp" />
+		<Unit filename="test/TestPositionsNormalsFile.cpp" />
+		<Unit filename="test/TestSurfacePoint.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>
