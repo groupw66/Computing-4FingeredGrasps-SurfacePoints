@@ -45,6 +45,9 @@
 			<Add option="-lgomp" />
 			<Add option="-lUnitTest++" />
 		</Linker>
+		<Unit filename="include/BasicGeometry.hpp" />
+		<Unit filename="include/Compute4FingeredGrasps.cpp" />
+		<Unit filename="include/Compute4FingeredGrasps.h" />
 		<Unit filename="include/Grasp.cpp" />
 		<Unit filename="include/Grasp.h" />
 		<Unit filename="include/OBJFile.cpp" />
@@ -58,6 +61,7 @@
 		<Unit filename="include/SurfacePoint.cpp" />
 		<Unit filename="include/SurfacePoint.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="test/TestCompute4FingeredGrasps.cpp" />
 		<Unit filename="test/TestGrasp.cpp" />
 		<Unit filename="test/TestOBJFile.cpp" />
 		<Unit filename="test/TestObjectSurfacePoints.cpp" />
