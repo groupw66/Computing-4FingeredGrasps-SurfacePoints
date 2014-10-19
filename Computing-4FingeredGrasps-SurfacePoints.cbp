@@ -53,6 +53,8 @@
 		<Unit filename="include/ObjectSurfacePoints.h" />
 		<Unit filename="include/PositionsNormalsFile.cpp" />
 		<Unit filename="include/PositionsNormalsFile.h" />
+		<Unit filename="include/SamplingPoints.cpp" />
+		<Unit filename="include/SamplingPoints.h" />
 		<Unit filename="include/SurfacePoint.cpp" />
 		<Unit filename="include/SurfacePoint.h" />
 		<Unit filename="main.cpp" />
@@ -60,6 +62,7 @@
 		<Unit filename="test/TestOBJFile.cpp" />
 		<Unit filename="test/TestObjectSurfacePoints.cpp" />
 		<Unit filename="test/TestPositionsNormalsFile.cpp" />
+		<Unit filename="test/TestSamplingPoints.cpp" />
 		<Unit filename="test/TestSurfacePoint.cpp" />
 		<Extensions>
 			<code_completion />
