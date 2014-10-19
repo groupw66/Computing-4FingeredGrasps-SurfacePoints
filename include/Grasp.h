@@ -17,6 +17,12 @@ class Grasp
         std::set<SurfacePoint> surfacePoints;
         Eigen::Vector3d cm;
 
+        //compare
+        inline bool operator< (Grasp const& r) const {
+            const Grasp& l = *this;
+            return l.surfacePoints < r.surfacePoints ;
+        }
+
     protected:
     private:
 };

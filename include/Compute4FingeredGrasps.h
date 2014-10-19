@@ -9,15 +9,25 @@
 
 namespace Compute4FingeredGrasps
 {
-	std::vector<std::vector<Grasp> > Compute4FingeredGrasps(const std::vector<SurfacePoint> &surfacePoints,
+	void compute4FingeredGrasps(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints,
                                                const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
 
-    std::vector<SurfacePoint> pointInConesFilter(const std::vector<SurfacePoint> &surfacePoints,
+    void pointInConesFilter(std::vector<SurfacePoint> &filtereds, const std::vector<SurfacePoint> &surfacePoints,
                                                Eigen::Vector3d point, double halfAngle=10.d);
 
-    std::vector<Grasp> findEquilibriumGrasps_naive(const std::vector<SurfacePoint> &M, Eigen::Vector3d samplePoint);
+    void findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<SurfacePoint> &M, Eigen::Vector3d samplePoint);
 
     bool isEquilibriumGrasp(Grasp grasp, Eigen::Vector3d point);
+
+    inline void uniqueSol(std::vector<Grasp>  &uniqueGrasps, const std::vector<std::vector<Grasp> > &allGrasps)
+    {
+        uniqueGrasps.clear();
+        std::set<Grasp> setGrasps;
+        for(std::vector<Grasp> grasps : allGrasps){
+            setGrasps.insert(grasps.begin(), grasps.end());
+        }
+        uniqueGrasps.insert(uniqueGrasps.end(), setGrasps.begin(), setGrasps.end());
+    }
 
     inline bool isPointInCone(Eigen::Vector3d point, SurfacePoint surfacePoint, double halfAngle=10.d)
     {
@@ -31,6 +41,15 @@ namespace Compute4FingeredGrasps
     {
         SurfacePoint surfacePoint2(surfacePoint.position, -surfacePoint.normal);
         return isPointInCone(point, surfacePoint, halfAngle) || isPointInCone(point, surfacePoint2, halfAngle);
+    }
+
+    inline Eigen::Vector3d findVectorInward(Eigen::Vector3d point, Eigen::Vector3d position, Eigen::Vector3d normal)
+    {
+        Eigen::Vector3d v = position - point;
+        if(Geometry::angleBetweenVectors(v, normal) < 0){
+            v = -v;
+        }
+        return v;
     }
 };
 

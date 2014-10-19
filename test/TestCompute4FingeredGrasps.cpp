@@ -2,9 +2,46 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include "Compute4FingeredGrasps.h"
+#include "PositionsNormalsFile.h"
+#include "ObjectSurfacePoints.h"
+#include "SamplingPoints.h"
 
 namespace
 {
+
+TEST(compute4FingeredGrasps_ammo50_16PointsPerAxis)
+{
+    char filename[1000] = "meshes/spectralMesh/ammo50.txt";
+    PositionsNormalsFile obj(filename);
+    ObjectSurfacePoints osp(obj);
+    int npointsPerAxis = 16;
+    std::vector<Eigen::Vector3d> sammplePoints = SamplingPoints::uniformAxis(osp.minAABB, osp.maxAABB, npointsPerAxis);
+
+    int nUniqueSol = 5076;
+    std::vector<std::vector<Grasp> > sol;
+    Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, sammplePoints, 10.d);
+    std::vector<Grasp> uniqueSol;
+    Compute4FingeredGrasps::uniqueSol(uniqueSol, sol);
+    CHECK_EQUAL(nUniqueSol, uniqueSol.size());
+}
+
+TEST(compute4FingeredGrasps_ammo50_32PointsPerAxis)
+{
+    char filename[1000] = "meshes/spectralMesh/ammo50.txt";
+    PositionsNormalsFile obj(filename);
+    ObjectSurfacePoints osp(obj);
+    int npointsPerAxis = 32;
+    std::vector<Eigen::Vector3d> sammplePoints = SamplingPoints::uniformAxis(osp.minAABB, osp.maxAABB, npointsPerAxis);
+
+    int nUniqueSol = 8073;
+    std::vector<std::vector<Grasp> > sol;
+    Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, sammplePoints, 10.d);
+    std::vector<Grasp> uniqueSol;
+    Compute4FingeredGrasps::uniqueSol(uniqueSol, sol);
+    CHECK_EQUAL(nUniqueSol, uniqueSol.size());
+}
+
+//isPointInCone
 
 TEST(isPointInCone_true0)
 {
