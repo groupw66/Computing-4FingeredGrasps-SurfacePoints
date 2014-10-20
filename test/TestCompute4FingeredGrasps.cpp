@@ -12,15 +12,15 @@ namespace
 
 inline void test_uniformAxis(ObjectSurfacePoints &osp, int npointsPerAxis, double halfAngle, int nUniqueSol)
 {
-    std::vector<Eigen::Vector3d> sammplePoints = SamplingPoints::uniformAxis(osp.minAABB, osp.maxAABB, npointsPerAxis);
+    std::vector<Eigen::Vector3d> samplePoints = SamplingPoints::uniformAxis(osp.minAABB, osp.maxAABB, npointsPerAxis);
 
     std::vector<std::vector<Grasp> > sol;
-    Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, sammplePoints, halfAngle);
+    Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, samplePoints, halfAngle);
     std::vector<Grasp> uniqueSol;
     Compute4FingeredGrasps::uniqueSol(uniqueSol, sol);
     /*
     std::vector<std::vector<Grasp> > sol_naive;
-    Compute4FingeredGrasps::compute4FingeredGrasps_naive(sol_naive, osp.surfacePoints, sammplePoints, halfAngle);
+    Compute4FingeredGrasps::compute4FingeredGrasps_naive(sol_naive, osp.surfacePoints, samplePoints, halfAngle);
     std::vector<Grasp> uniqueSol_naive;
     Compute4FingeredGrasps::uniqueSol(uniqueSol_naive, sol_naive);
     CHECK_EQUAL(uniqueSol_naive.size(), uniqueSol.size());
