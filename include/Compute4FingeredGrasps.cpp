@@ -5,7 +5,7 @@ void Compute4FingeredGrasps::compute4FingeredGrasps(std::vector<std::vector<Gras
     sol.clear();
     sol.resize(samplePoints.size());
     #pragma omp parallel for schedule(static, 1)
-    for(int i=0 ; i<samplePoints.size() ; ++i){
+    for(unsigned int i=0 ; i<samplePoints.size() ; ++i){
         std::vector<SurfacePoint> M;
         pointInConesFilter(M, surfacePoints, samplePoints[i], halfAngle);
         if(M.size() >= 4){
@@ -21,7 +21,7 @@ void Compute4FingeredGrasps::compute4FingeredGrasps_naive(std::vector<std::vecto
     sol.clear();
     sol.resize(samplePoints.size());
     #pragma omp parallel for schedule(static, 1)
-    for(int i=0 ; i<samplePoints.size() ; ++i){
+    for(unsigned int i=0 ; i<samplePoints.size() ; ++i){
         std::vector<SurfacePoint> M;
         pointInConesFilter(M, surfacePoints, samplePoints[i], halfAngle);
         if(M.size() >= 4){
@@ -52,8 +52,8 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<Grasp>&
     for(SurfacePoint surfacePoint : M){
         vectorInwards.push_back(findVectorInward(samplePoint, surfacePoint.position, surfacePoint.normal));
     }
-	for(int i=0 ; i < vectorInwards.size() ; ++i){
-		for(int j=i+1 ; j < vectorInwards.size() ; ++j){
+	for(unsigned int i=0 ; i < vectorInwards.size() ; ++i){
+		for(unsigned int j=i+1 ; j < vectorInwards.size() ; ++j){
 			std::vector<int> VLNId,VLPId,VRNId,VRPId,VLZId,VRZId;
 			std::vector<Eigen::Vector2d> VLP,VRN,VRP,fdrAngles;
 			fdrAngles.reserve(vectorInwards.size()-j-1);
@@ -66,7 +66,7 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<Grasp>&
             T.transposeInPlace();
 			double fanHalfLen=fabs(Geometry::toFDR(T*vectorInwards[i]).y());
 			// partition points into appropriate V*
-			for(int k=j+1 ; k < vectorInwards.size() ; ++k){
+			for(unsigned int k=j+1 ; k < vectorInwards.size() ; ++k){
 				Eigen::Vector3d n = T*vectorInwards[k];
 				Eigen::Vector2d fdr = Geometry::toFDR(n);
 				fdrAngles.push_back(Geometry::toFDRAngle(n, fanHalfLen));
@@ -135,10 +135,10 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<Grasp>&
 void Compute4FingeredGrasps::findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<SurfacePoint>& M, Eigen::Vector3d samplePoint)
 {
     sol.clear();
-    for(int a=0 ; a < M.size() ; ++a){
-        for(int b=a+1 ; b < M.size() ; ++b){
-            for(int c=b+1 ; c < M.size() ; ++c){
-                for(int d=c+1 ; d < M.size() ; ++d){
+    for(unsigned int a=0 ; a < M.size() ; ++a){
+        for(unsigned int b=a+1 ; b < M.size() ; ++b){
+            for(unsigned int c=b+1 ; c < M.size() ; ++c){
+                for(unsigned int d=c+1 ; d < M.size() ; ++d){
                     SurfacePoint aa = M[a];
                     SurfacePoint bb = M[b];
                     SurfacePoint cc = M[c];

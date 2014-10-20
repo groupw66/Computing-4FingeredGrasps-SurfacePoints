@@ -8,7 +8,7 @@ namespace
 TEST(ObjectSurfacePoints_ctor_OBJFile_Amicelli_800)
 {
     OBJFile obj("meshes/KIT/Amicelli_800.obj");
-    int nPoints = 400;
+    //int nPoints = 400;
     int nFacets = 798;
     ObjectSurfacePoints osp(obj);
     CHECK_EQUAL(nFacets, osp.surfacePoints.size());

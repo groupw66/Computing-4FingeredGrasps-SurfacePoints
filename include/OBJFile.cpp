@@ -38,7 +38,7 @@ void OBJFile::open(const char* _filename)
             while (std::getline(ss, item, ' ')) {
                 iVertexs.push_back(atoi(item.c_str())-1);
             }
-            for(int i=2 ; i<iVertexs.size() ; ++i){
+            for(unsigned int i=2 ; i<iVertexs.size() ; ++i){
                 facets.push_back(Eigen::Vector3i(iVertexs[0], iVertexs[i-1], iVertexs[i]));
             }
         }

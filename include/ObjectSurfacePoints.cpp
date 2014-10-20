@@ -43,7 +43,7 @@ ObjectSurfacePoints::ObjectSurfacePoints(const PositionsNormalsFile &_positionsN
     minAABB = Eigen::Vector3d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
     maxAABB = Eigen::Vector3d(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), std::numeric_limits<double>::min());
     cm = Eigen::Vector3d(0,0,0);
-    for(int i=0 ; i<_positionsNormalsFile.positions.size() ; ++i){
+    for(unsigned int i=0 ; i<_positionsNormalsFile.positions.size() ; ++i){
         Eigen::Vector3d position = _positionsNormalsFile.positions[i];
         Eigen::Vector3d normal = _positionsNormalsFile.normals[i];
         surfacePoints.push_back(SurfacePoint(position, normal));

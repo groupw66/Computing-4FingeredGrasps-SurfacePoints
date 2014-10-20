@@ -21,7 +21,7 @@ namespace Geometry
     {
         Qhull qhull;
         realT points[3 * vectors.size()];
-        for(int i=0 ; i < vectors.size() ; ++i){
+        for(unsigned int i=0 ; i < vectors.size() ; ++i){
             points[i*3] = vectors[i].x();
             points[i*3+1] = vectors[i].y();
             points[i*3+2] = vectors[i].z();
