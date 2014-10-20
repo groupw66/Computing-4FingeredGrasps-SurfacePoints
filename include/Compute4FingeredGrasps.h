@@ -6,18 +6,27 @@
 #include "SurfacePoint.h"
 #include "Grasp.h"
 #include "BasicGeometry.hpp"
+#include "RangeTree2D.h"
 
 namespace Compute4FingeredGrasps
 {
 	void compute4FingeredGrasps(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints,
                                                const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
 
+    void compute4FingeredGrasps_naive(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints,
+                                               const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
+
     void pointInConesFilter(std::vector<SurfacePoint> &filtereds, const std::vector<SurfacePoint> &surfacePoints,
                                                Eigen::Vector3d point, double halfAngle=10.d);
 
+    // using orthogonal range search with fractional cascading in force dual representation
+	// O(n^3 (logn + K))
+    void findEquilibriumGrasps_forceDual(std::vector<Grasp>  &sol, const std::vector<SurfacePoint> &M, Eigen::Vector3d samplePoint);
+
+    // O(n^4)
     void findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<SurfacePoint> &M, Eigen::Vector3d samplePoint);
 
-    bool isEquilibriumGrasp(Grasp grasp, Eigen::Vector3d point);
+    bool isEquilibriumGrasp(Grasp grasp, Eigen::Vector3d samplePoint);
 
     inline void uniqueSol(std::vector<Grasp>  &uniqueGrasps, const std::vector<std::vector<Grasp> > &allGrasps)
     {
@@ -45,8 +54,8 @@ namespace Compute4FingeredGrasps
 
     inline Eigen::Vector3d findVectorInward(Eigen::Vector3d point, Eigen::Vector3d position, Eigen::Vector3d normal)
     {
-        Eigen::Vector3d v = position - point;
-        if(Geometry::angleBetweenVectors(v, normal) < 0){
+        Eigen::Vector3d v = point - position;
+        if(Geometry::angleBetweenVectors(v, normal) > M_PI/2){
             v = -v;
         }
         return v;

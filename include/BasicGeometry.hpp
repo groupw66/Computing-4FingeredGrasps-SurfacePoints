@@ -51,5 +51,19 @@ namespace Geometry
         else
             return isVectorsPositivelySpan3DQhull(vectors);
     }
+
+    inline Eigen::Vector2d toFDR(Eigen::Vector3d in){
+		return
+		in.z() == 0 ?
+			Eigen::Vector2d(in.x(), in.y())
+		:
+			Eigen::Vector2d(in.x()/in.z(), in.y()/in.z());
+	}
+	inline Eigen::Vector2d toFDRAngle(Eigen::Vector3d in, double fanHalfLen){
+		Eigen::Vector2d fdr = toFDR(in);
+		fanHalfLen = in.z() == 0 ? 0 : fanHalfLen;
+		double x=fabs(fdr.x());
+		return Eigen::Vector2d(std::atan2(x, fanHalfLen-fdr.y()), std::atan2(x, fanHalfLen+fdr.y()));
+	}
 }
 #endif // BASICGEOMETRY_H
