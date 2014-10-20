@@ -3,6 +3,7 @@
 
 #include <Eigen/Dense>
 #include <vector>
+#include <limits>
 #include "SurfacePoint.h"
 #include "OBJFile.h"
 #include "PositionsNormalsFile.h"

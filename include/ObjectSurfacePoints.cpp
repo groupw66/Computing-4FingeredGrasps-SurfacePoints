@@ -13,6 +13,8 @@ ObjectSurfacePoints::~ObjectSurfacePoints()
 ObjectSurfacePoints::ObjectSurfacePoints(const OBJFile &_objFile)
 {
     surfacePoints.clear();
+    minAABB = Eigen::Vector3d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+    maxAABB = Eigen::Vector3d(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), std::numeric_limits<double>::min());
     cm = Eigen::Vector3d(0,0,0);
     for(Eigen::Vector3i facet : _objFile.facets){
         int i=facet.x(), j=facet.y(), k=facet.z();
@@ -38,6 +40,8 @@ ObjectSurfacePoints::ObjectSurfacePoints(const OBJFile &_objFile)
 ObjectSurfacePoints::ObjectSurfacePoints(const PositionsNormalsFile &_positionsNormalsFile)
 {
     surfacePoints.clear();
+    minAABB = Eigen::Vector3d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+    maxAABB = Eigen::Vector3d(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), std::numeric_limits<double>::min());
     cm = Eigen::Vector3d(0,0,0);
     for(int i=0 ; i<_positionsNormalsFile.positions.size() ; ++i){
         Eigen::Vector3d position = _positionsNormalsFile.positions[i];
