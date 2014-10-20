@@ -14,7 +14,7 @@ class Grasp
         Grasp(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4, Eigen::Vector3d _cm = Eigen::Vector3d(0.d,0.d,0.d));
         Grasp(const std::vector<SurfacePoint> &_surfacePoints, Eigen::Vector3d _cm = Eigen::Vector3d(0.d,0.d,0.d));
 
-        std::set<SurfacePoint> surfacePoints;
+        std::vector<SurfacePoint> surfacePoints;
         Eigen::Vector3d cm;
 
         //compare

@@ -18,6 +18,7 @@ TEST(Grasp_ctor1_0)
     CHECK_EQUAL(cm,g.cm);
 }
 
+/* //duplicate point not allowed
 TEST(Grasp_ctor1_1)
 {
     SurfacePoint sp1(Eigen::Vector3d(1,2,3), Eigen::Vector3d(4,5,6));
@@ -29,6 +30,7 @@ TEST(Grasp_ctor1_1)
     CHECK_EQUAL(3,g.surfacePoints.size());
     CHECK_EQUAL(cm,g.cm);
 }
+*/
 
 TEST(Grasp_ctor1_2)
 {
