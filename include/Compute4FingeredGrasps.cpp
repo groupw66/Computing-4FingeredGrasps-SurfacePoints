@@ -15,6 +15,28 @@ void Compute4FingeredGrasps::compute4FingeredGrasps(std::vector<std::vector<Gras
         }
     }
 }
+std::vector<int> Compute4FingeredGrasps::compute4FingeredGrasps(std::set<Grasp>& sol, const std::vector<SurfacePoint>& surfacePoints, const std::vector<Eigen::Vector3d>& samplePoints, double halfAngle)
+{
+    std::vector<int> sizeSols;
+    sol.clear();
+    #pragma omp parallel for schedule(static, 1)
+    for(unsigned int i=0 ; i<samplePoints.size() ; ++i){
+        std::vector<SurfacePoint> M;
+        pointInConesFilter(M, surfacePoints, samplePoints[i], halfAngle);
+        std::vector<Grasp> fcGrasps;
+        if(M.size() >= 4){
+            //findEquilibriumGrasps_naive(fcGrasps, M, samplePoints[i]);
+            findEquilibriumGrasps_forceDual(fcGrasps, M, samplePoints[i]);
+        }
+        #pragma omp critical
+        {
+            sol.insert(fcGrasps.begin(),fcGrasps.end());
+            sizeSols.push_back(sol.size());
+        }
+    }
+    return sizeSols;
+}
+
 
 void Compute4FingeredGrasps::compute4FingeredGrasps_naive(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints, const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle)
 {

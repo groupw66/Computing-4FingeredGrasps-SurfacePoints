@@ -13,6 +13,9 @@ namespace Compute4FingeredGrasps
 	void compute4FingeredGrasps(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints,
                                                const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
 
+    std::vector<int> compute4FingeredGrasps(std::set<Grasp> &sol, const std::vector<SurfacePoint> &surfacePoints,
+                                               const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
+
     void compute4FingeredGrasps_naive(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints,
                                                const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
 

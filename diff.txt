@@ -1,0 +1,154 @@
+diff --git a/include/Compute4FingeredGrasps.cpp b/include/Compute4FingeredGrasps.cpp
+index 336324b..b67628a 100644
+--- a/include/Compute4FingeredGrasps.cpp
++++ b/include/Compute4FingeredGrasps.cpp
+@@ -15,6 +15,28 @@ void Compute4FingeredGrasps::compute4FingeredGrasps(std::vector<std::vector<Gras
+         }
+     }
+ }
++std::vector<int> Compute4FingeredGrasps::compute4FingeredGrasps(std::set<Grasp>& sol, const std::vector<SurfacePoint>& surfacePoints, const std::vector<Eigen::Vector3d>& samplePoints, double halfAngle)
++{
++    std::vector<int> sizeSols;
++    sol.clear();
++    #pragma omp parallel for schedule(static, 1)
++    for(unsigned int i=0 ; i<samplePoints.size() ; ++i){
++        std::vector<SurfacePoint> M;
++        pointInConesFilter(M, surfacePoints, samplePoints[i], halfAngle);
++        std::vector<Grasp> fcGrasps;
++        if(M.size() >= 4){
++            //findEquilibriumGrasps_naive(fcGrasps, M, samplePoints[i]);
++            findEquilibriumGrasps_forceDual(fcGrasps, M, samplePoints[i]);
++        }
++        #pragma omp critical
++        {
++            sol.insert(fcGrasps.begin(),fcGrasps.end());
++            sizeSols.push_back(sol.size());
++        }
++    }
++    return sizeSols;
++}
++
+ 
+ void Compute4FingeredGrasps::compute4FingeredGrasps_naive(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints, const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle)
+ {
+diff --git a/include/Compute4FingeredGrasps.h b/include/Compute4FingeredGrasps.h
+index 5312a14..b42db71 100644
+--- a/include/Compute4FingeredGrasps.h
++++ b/include/Compute4FingeredGrasps.h
+@@ -13,6 +13,9 @@ namespace Compute4FingeredGrasps
+ 	void compute4FingeredGrasps(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints,
+                                                const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
+ 
++    std::vector<int> compute4FingeredGrasps(std::set<Grasp> &sol, const std::vector<SurfacePoint> &surfacePoints,
++                                               const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
++
+     void compute4FingeredGrasps_naive(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints,
+                                                const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
+ 
+diff --git a/main.cpp b/main.cpp
+index 27af8cf..97c6b88 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -1,10 +1,82 @@
+ #include <iostream>
+-#include "UnitTest++.h"
++#include <fstream>
++#include <UnitTest++.h>
++#include <cstring>
++#include "SamplingPoints.h"
++#include "Compute4FingeredGrasps.h"
++#include "OBJFile.h"
++#include "PositionsNormalsFile.h"
++#include "ObjectSurfacePoints.h"
+ 
+ using namespace std;
+ 
+-int main()
++int main(int argc,char *argv[])
+ {
+-    cout << "Hello world!" << endl;
+-    return UnitTest::RunAllTests();
++    if(argc > 1){
++        std::string filename;
++        int nSamplePoint = 10000;
++        double halfAngle = 10.d;
++        if(argc >= 2){
++            filename = argv[1];
++        }
++        if(argc >= 3){
++            nSamplePoint = atoi(argv[2]);
++        }
++        if(argc >= 4){
++            halfAngle = atof(argv[3]);
++        }
++        //open object model file
++        ObjectSurfacePoints osp;
++        std::string fExt = filename.substr(filename.find_last_of(".") + 1);
++        std::string fName = filename.substr(filename.find_last_of("/") + 1);
++        if(fExt == "obj") {
++            OBJFile obj(filename.c_str());
++            osp.open(obj);
++        }
++        else if(fExt == "txt") {
++            PositionsNormalsFile obj(filename.c_str());
++            osp.open(obj);
++        }
++        else {
++            std::cout << "Not supported file..." << std::endl;
++        }
++
++        //randomUniform
++        printf("start RandomUniform\n");
++        std::vector<Eigen::Vector3d> samplePoints = SamplingPoints::randomUniform(osp.minAABB, osp.maxAABB, nSamplePoint);
++        printf("SamplingPoints::randomUniform\n");
++        //std::vector<std::vector<Grasp> > sol;
++        //Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, samplePoints, halfAngle);
++        std::set<Grasp> solSet;
++        std::vector<int> sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, samplePoints, halfAngle);
++        printf("Compute4FingeredGrasps success\n");
++
++        std::ofstream ofsUniform ("out/"+fName + ".uniform.out", std::ofstream::ate);
++        ofsUniform.unsetf ( std::ios::floatfield );
++        ofsUniform.precision(std::numeric_limits<long double>::digits10);
++        /*
++        for(unsigned int i=0 ; i < samplePoints.size() ; ++i){
++            ofsUniform << samplePoints[i].x() << " " << samplePoints[i].y() << " " << samplePoints[i].z() << "\n";
++            ofsUniform << sol[i].size() << "\n";
++            for(Grasp g : sol[i]){
++                ofsUniform << g.surfacePoints.size() << "\n";
++                for(SurfacePoint sp : g.surfacePoints){
++                    ofsUniform << sp.position.x() << " " << sp.position.y() << " " << sp.position.z() << " ";
++                    ofsUniform << sp.normal.x() << " " << sp.normal.y() << " " << sp.normal.z() << "\n";
++                }
++            }
++        }
++        */
++        ofsUniform << sizeSols.size() << "\n";
++        for(int sizeSol : sizeSols){
++            ofsUniform << sizeSol << "\n";
++        }
++        ofsUniform.close();
++        printf("finish RandomUniform\n");
++
++    }
++    else{
++        return UnitTest::RunAllTests();
++    }
++    return 0;
+ }
+diff --git a/test/TestCompute4FingeredGrasps.cpp b/test/TestCompute4FingeredGrasps.cpp
+index 5a2b09b..47028f6 100644
+--- a/test/TestCompute4FingeredGrasps.cpp
++++ b/test/TestCompute4FingeredGrasps.cpp
+@@ -25,7 +25,11 @@ inline void test_uniformAxis(ObjectSurfacePoints &osp, int npointsPerAxis, doubl
+     Compute4FingeredGrasps::uniqueSol(uniqueSol_naive, sol_naive);
+     CHECK_EQUAL(uniqueSol_naive.size(), uniqueSol.size());
+     */
++    std::set<Grasp> solSet;
++    std::vector<int> sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, samplePoints, halfAngle);
++
+     CHECK_EQUAL(nUniqueSol, uniqueSol.size());
++    CHECK_EQUAL(nUniqueSol, solSet.size());
+ }
+ 
+ TEST(compute4FingeredGrasps_cow500_16PointsPerAxis)
