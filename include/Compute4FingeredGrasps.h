@@ -54,7 +54,7 @@ namespace Compute4FingeredGrasps
 
     inline Eigen::Vector3d findVectorInward(Eigen::Vector3d point, Eigen::Vector3d position, Eigen::Vector3d normal)
     {
-        Eigen::Vector3d v = point - position;
+        Eigen::Vector3d v = (point - position).normalized();
         if(Geometry::angleBetweenVectors(v, normal) > M_PI/2){
             v = -v;
         }
