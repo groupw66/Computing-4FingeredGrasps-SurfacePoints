@@ -10,7 +10,7 @@ Grasp::~Grasp()
     //dtor
 }
 
-Grasp::Grasp(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4, Eigen::Vector3d _cm)
+Grasp::Grasp(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4)
 {
     surfacePoints.clear();
     surfacePoints.push_back(sp1);
@@ -18,13 +18,13 @@ Grasp::Grasp(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint 
     surfacePoints.push_back(sp3);
     surfacePoints.push_back(sp4);
     std::sort(surfacePoints.begin(), surfacePoints.end());
-    cm = _cm;
+    //cm = _cm;
 }
 
-Grasp::Grasp(const std::vector<SurfacePoint>& _surfacePoints, Eigen::Vector3d _cm)
+Grasp::Grasp(const std::vector<SurfacePoint>& _surfacePoints)
 {
     surfacePoints.clear();
     surfacePoints.insert(surfacePoints.end(), _surfacePoints.begin(), _surfacePoints.end());
     std::sort(surfacePoints.begin(), surfacePoints.end());
-    cm = _cm;
+    //cm = _cm;
 }
