@@ -13,8 +13,12 @@ class ObjectSurfacePoints
     public:
         ObjectSurfacePoints();
         virtual ~ObjectSurfacePoints();
-        ObjectSurfacePoints(const OBJFile &_objFile);
-        ObjectSurfacePoints(const PositionsNormalsFile &_positionsNormalsFile);
+        ObjectSurfacePoints(const OBJFile &_objFile){ open(_objFile); }
+        ObjectSurfacePoints(const PositionsNormalsFile &_positionsNormalsFile){ open(_positionsNormalsFile); }
+
+        void open(const OBJFile &_objFile);
+        void open(const PositionsNormalsFile &_positionsNormalsFile);
+        void computeCM();
 
         std::vector<SurfacePoint> surfacePoints;
         Eigen::Vector3d cm;
