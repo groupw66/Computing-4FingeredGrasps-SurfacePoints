@@ -38,3 +38,8 @@
 bin/
 obj/
 meshes/
+out/
+
+# Diff file
+*.diff
+*diff.txt
