@@ -6,28 +6,42 @@
 #include "OBJFile.h"
 #include "ObjectSurfacePoints.h"
 #include "SamplingPoints.h"
+#include <chrono>
 
 namespace
 {
 
 inline void test_uniformAxis(ObjectSurfacePoints &osp, int npointsPerAxis, double halfAngle, int nUniqueSol)
 {
-    std::vector<Eigen::Vector3d> samplePoints = SamplingPoints::uniformAxis(osp.minAABB, osp.maxAABB, npointsPerAxis);
+    std::chrono::high_resolution_clock::time_point t1;
+    std::chrono::high_resolution_clock::time_point t2;
 
+    std::vector<Eigen::Vector3d> samplePoints = SamplingPoints::uniformAxis(osp.minAABB, osp.maxAABB, npointsPerAxis);
+    /*
     std::vector<std::vector<Grasp> > sol;
+    t1 = std::chrono::high_resolution_clock::now();
     Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, samplePoints, halfAngle);
+    t2 = std::chrono::high_resolution_clock::now();
+    std::cout << "compute4FingeredGrasps: " << std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count()/1000000.d << " s" << std::endl;
     std::vector<Grasp> uniqueSol;
     Compute4FingeredGrasps::uniqueSol(uniqueSol, sol);
     CHECK_EQUAL(nUniqueSol, uniqueSol.size());
-
+    */
+    /*
     std::vector<std::vector<Grasp> > sol_naive;
+    t1 = std::chrono::high_resolution_clock::now();
     Compute4FingeredGrasps::compute4FingeredGrasps_naive(sol_naive, osp.surfacePoints, samplePoints, halfAngle);
+    t2 = std::chrono::high_resolution_clock::now();
+    std::cout << "compute4FingeredGrasps_naive: " << std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count()/1000000.d << " s" << std::endl;
     std::vector<Grasp> uniqueSol_naive;
     Compute4FingeredGrasps::uniqueSol(uniqueSol_naive, sol_naive);
     CHECK_EQUAL(nUniqueSol, uniqueSol_naive.size());
-
+    */
     std::set<Grasp> solSet;
+    t1 = std::chrono::high_resolution_clock::now();
     std::vector<int> sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, samplePoints, halfAngle);
+    t2 = std::chrono::high_resolution_clock::now();
+    std::cout << "compute4FingeredGrasps: " << std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count()/1000000.d << " s" << std::endl;
     CHECK_EQUAL(nUniqueSol, solSet.size());
 }
 
