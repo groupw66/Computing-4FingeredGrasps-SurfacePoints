@@ -41,59 +41,72 @@ int main(int argc,char *argv[])
             std::cout << "Not supported file..." << std::endl;
         }
 
-        //randomUniform
-        printf("start RandomUniform\n");
-        std::vector<Eigen::Vector3d> samplePoints = SamplingPoints::randomUniform(osp.minAABB, osp.maxAABB, nSamplePoint);
-        printf("SamplingPoints::randomUniform\n");
-        //std::vector<std::vector<Grasp> > sol;
-        //Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, samplePoints, halfAngle);
+        printf("\n%s\n", filename.c_str());
+        std::vector<Eigen::Vector3d> sampledPoints;
         std::set<Grasp> solSet;
-        std::vector<int> sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, samplePoints, halfAngle);
-        printf("Compute4FingeredGrasps success\n");
+        std::vector<int> sizeSols;
+        std::ofstream ofs;
+        ofs.unsetf ( std::ios::floatfield );
+        ofs.precision(std::numeric_limits<long double>::digits10);
 
-        std::ofstream ofsUniform ("out/"+fName + ".uniform.out", std::ofstream::ate);
-        ofsUniform.unsetf ( std::ios::floatfield );
-        ofsUniform.precision(std::numeric_limits<long double>::digits10);
+        // SamplingPoints::randomUniform
+        printf("SamplingPoints::randomUniform start\n");
+        sampledPoints = SamplingPoints::randomUniform(osp.minAABB, osp.maxAABB, nSamplePoint);
+        printf("SamplingPoints::randomUniform ok\n");
         /*
-        for(unsigned int i=0 ; i < samplePoints.size() ; ++i){
-            ofsUniform << samplePoints[i].x() << " " << samplePoints[i].y() << " " << samplePoints[i].z() << "\n";
-            ofsUniform << sol[i].size() << "\n";
-            for(Grasp g : sol[i]){
-                ofsUniform << g.surfacePoints.size() << "\n";
-                for(SurfacePoint sp : g.surfacePoints){
-                    ofsUniform << sp.position.x() << " " << sp.position.y() << " " << sp.position.z() << " ";
-                    ofsUniform << sp.normal.x() << " " << sp.normal.y() << " " << sp.normal.z() << "\n";
-                }
-            }
+        printf("Write .uniform.sampledPoints start\n");
+        ofs.open(fName + ".uniform.sampledPoints", std::ofstream::ate);
+        ofs << sampledPoints.size() << "\n";
+        for(Eigen::Vector3d sp : sampledPoints){
+            ofs << sp.x() << " " << sp.y() << " " << sp.z() << "\n";
         }
+        ofs.close();
+        printf("Write .uniform.sampledPoints ok\n");
         */
-        ofsUniform << sizeSols.size() << "\n";
+        printf("Compute4FingeredGrasps start\n");
+        sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, sampledPoints, halfAngle);
+        printf("Compute4FingeredGrasps ok\n");
+
+        printf("Write .uniform.sizeSols start\n");
+        ofs.open(fName + ".uniform.sizeSols", std::ofstream::ate);
+        ofs << sizeSols.size() << "\n";
         for(int sizeSol : sizeSols){
-            ofsUniform << sizeSol << "\n";
+            ofs << sizeSol << "\n";
         }
-        ofsUniform.close();
-        printf("finish RandomUniform\n");
+        ofs.close();
+        printf("Write .uniform.sizeSols ok\n");
+
+        printf("\n");
 
         //randomNormalDist
-        printf("start randomNormalDist\n");
+        printf("SamplingPoints::randomNormalDist start\n");
         Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
-        samplePoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint);
-        printf("SamplingPoints::randomNormalDist\n");
-        //std::vector<std::vector<Grasp> > sol;
-        //Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, samplePoints, halfAngle);
-        sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, samplePoints, halfAngle);
-        printf("Compute4FingeredGrasps success\n");
-
-        std::ofstream ofsNormalDist ("out/"+fName + ".normalDist.out", std::ofstream::ate);
-        ofsNormalDist.unsetf ( std::ios::floatfield );
-        ofsNormalDist.precision(std::numeric_limits<long double>::digits10);
-        ofsNormalDist << sizeSols.size() << "\n";
-        for(int sizeSol : sizeSols){
-            ofsNormalDist << sizeSol << "\n";
+        sampledPoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint);
+        printf("SamplingPoints::randomNormalDist ok\n");
+        /*
+        printf("Write .normalDist.sampledPoints start\n");
+        ofs.open(fName + ".normalDist.sampledPoints", std::ofstream::ate);
+        ofs << sampledPoints.size() << "\n";
+        for(Eigen::Vector3d sp : sampledPoints){
+            ofs << sp.x() << " " << sp.y() << " " << sp.z() << "\n";
         }
-        ofsNormalDist.close();
-        printf("finish randomNormalDist\n");
+        ofs.close();
+        printf("Write .normalDist.sampledPoints ok\n");
+        */
+        printf("Compute4FingeredGrasps start\n");
+        sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, sampledPoints, halfAngle);
+        printf("Compute4FingeredGrasps ok\n");
 
+        printf("Write .normalDist.sizeSols start\n");
+        ofs.open(fName + ".normalDist.sizeSols", std::ofstream::ate);
+        ofs << sizeSols.size() << "\n";
+        for(int sizeSol : sizeSols){
+            ofs << sizeSol << "\n";
+        }
+        ofs.close();
+        printf("Write .normalDist.sizeSols ok\n");
+
+        printf("--------------------------------\n");
     }
     else{
         return UnitTest::RunAllTests();
