@@ -6,11 +6,11 @@ void Compute4FingeredGrasps::compute4FingeredGrasps(std::vector<std::vector<Gras
     sol.resize(samplePoints.size());
     #pragma omp parallel for schedule(static, 1)
     for(unsigned int i=0 ; i<samplePoints.size() ; ++i){
-        std::vector<SurfacePoint> M;
+        std::vector<unsigned int> M;
         pointInConesFilter(M, surfacePoints, samplePoints[i], halfAngle);
         if(M.size() >= 4){
             std::vector<Grasp> fcGrasps;
-            findEquilibriumGrasps_forceDual(fcGrasps, M, samplePoints[i]);
+            findEquilibriumGrasps_forceDual(fcGrasps, M, samplePoints[i], surfacePoints);
             sol[i] = fcGrasps;
         }
     }
@@ -21,12 +21,12 @@ std::vector<int> Compute4FingeredGrasps::compute4FingeredGrasps(std::set<Grasp>&
     sol.clear();
     #pragma omp parallel for schedule(static, 1)
     for(unsigned int i=0 ; i<samplePoints.size() ; ++i){
-        std::vector<SurfacePoint> M;
+        std::vector<unsigned int> M;
         pointInConesFilter(M, surfacePoints, samplePoints[i], halfAngle);
         std::vector<Grasp> fcGrasps;
         if(M.size() >= 4){
             //findEquilibriumGrasps_naive(fcGrasps, M, samplePoints[i]);
-            findEquilibriumGrasps_forceDual(fcGrasps, M, samplePoints[i]);
+            findEquilibriumGrasps_forceDual(fcGrasps, M, samplePoints[i], surfacePoints);
         }
         #pragma omp critical
         {
@@ -44,35 +44,35 @@ void Compute4FingeredGrasps::compute4FingeredGrasps_naive(std::vector<std::vecto
     sol.resize(samplePoints.size());
     #pragma omp parallel for schedule(static, 1)
     for(unsigned int i=0 ; i<samplePoints.size() ; ++i){
-        std::vector<SurfacePoint> M;
+        std::vector<unsigned int> M;
         pointInConesFilter(M, surfacePoints, samplePoints[i], halfAngle);
         if(M.size() >= 4){
             std::vector<Grasp> fcGrasps;
-            findEquilibriumGrasps_naive(fcGrasps, M, samplePoints[i]);
+            findEquilibriumGrasps_naive(fcGrasps, M, samplePoints[i], surfacePoints);
             sol[i] = fcGrasps;
         }
     }
 }
 
-void Compute4FingeredGrasps::pointInConesFilter(std::vector<SurfacePoint> &filtereds, const std::vector<SurfacePoint>& surfacePoints, Eigen::Vector3d point, double halfAngle)
+void Compute4FingeredGrasps::pointInConesFilter(std::vector<unsigned int> &filtereds, const std::vector<SurfacePoint>& surfacePoints, Eigen::Vector3d point, double halfAngle)
 {
     filtereds.clear();
-    for(const SurfacePoint &surfacePoint : surfacePoints){
-        if(isPointInConeDoubleside(point, surfacePoint, halfAngle)){
-            filtereds.push_back(surfacePoint);
+    for(unsigned int i=0 ; i<surfacePoints.size() ; ++i){
+        if(isPointInConeDoubleside(point, surfacePoints[i], halfAngle)){
+            filtereds.push_back(i);
         }
 	}
 }
 
-void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<Grasp>& fcGrasps, const std::vector<SurfacePoint>& M, Eigen::Vector3d samplePoint)
+void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<Grasp>& fcGrasps, const std::vector<unsigned int>& M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints)
 {
     fcGrasps.clear();
 	RangeTree2D PRN,
                 PLP,
                 PRP;
     std::vector<Eigen::Vector3d> vectorInwards;
-    for(SurfacePoint surfacePoint : M){
-        vectorInwards.push_back(findVectorInward(samplePoint, surfacePoint.position, surfacePoint.normal));
+    for(unsigned int surfacePointId : M){
+        vectorInwards.push_back(findVectorInward(samplePoint, surfacePoints[surfacePointId].position, surfacePoints[surfacePointId].normal));
     }
 	for(unsigned int i=0 ; i < vectorInwards.size() ; ++i){
 		for(unsigned int j=i+1 ; j < vectorInwards.size() ; ++j){
@@ -125,13 +125,13 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<Grasp>&
 			for(int id : VLNId){
 				// Negative-Negative Dual Points Pairing
 				for(int l : PRN.queryId(0,0, M_PI-fdrAngles[id].x(), M_PI-fdrAngles[id].y())){
-					fcGrasps.push_back(Grasp(M[i], M[j], M[j+1+id], M[j+1+VRNId[l]]));
+                    fcGrasps.push_back(Grasp(M[i], M[j], M[j+1+id], M[j+1+VRNId[l]]));
 					++lnrn;
 				}
 				// Negative-Positive Dual Points Pairing
 				// Left_Negative / Left_Positive
 				for(int l : PLP.queryId(fdrAngles[id].x(), fdrAngles[id].y(), M_PI,M_PI)){
-					fcGrasps.push_back(Grasp(M[i], M[j], M[j+1+id], M[j+1+VLPId[l]]));
+                    fcGrasps.push_back(Grasp(M[i], M[j], M[j+1+id], M[j+1+VLPId[l]]));
 					++lnlp;
 				}
 			}
@@ -154,19 +154,15 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<Grasp>&
 }
 
 
-void Compute4FingeredGrasps::findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<SurfacePoint>& M, Eigen::Vector3d samplePoint)
+void Compute4FingeredGrasps::findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<unsigned int>& M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints)
 {
     sol.clear();
     for(unsigned int a=0 ; a < M.size() ; ++a){
         for(unsigned int b=a+1 ; b < M.size() ; ++b){
             for(unsigned int c=b+1 ; c < M.size() ; ++c){
                 for(unsigned int d=c+1 ; d < M.size() ; ++d){
-                    SurfacePoint aa = M[a];
-                    SurfacePoint bb = M[b];
-                    SurfacePoint cc = M[c];
-                    SurfacePoint dd = M[d];
-                    Grasp grasp(aa,bb,cc,dd);
-                    if(isEquilibriumGrasp(grasp,samplePoint)){
+                    Grasp grasp(M[a], M[b], M[c], M[d]);
+                    if(isEquilibriumGrasp(grasp, samplePoint, surfacePoints)){
                        sol.push_back(grasp);
                     }
                 }
@@ -175,11 +171,11 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_naive(std::vector<Grasp>  &so
     }
 }
 
-bool Compute4FingeredGrasps::isEquilibriumGrasp(Grasp grasp, Eigen::Vector3d samplePoint)
+bool Compute4FingeredGrasps::isEquilibriumGrasp(Grasp grasp, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints)
 {
     std::vector<Eigen::Vector3d> vectorInwards;
-    for(SurfacePoint surfacePoint : grasp.surfacePoints){
-        vectorInwards.push_back( findVectorInward(samplePoint, surfacePoint.position, surfacePoint.normal) );
+    for(int surfacePointId : grasp.surfacePoints){
+        vectorInwards.push_back( findVectorInward(samplePoint, surfacePoints[surfacePointId].position, surfacePoints[surfacePointId].normal));
     }
     return Geometry::isVectorsPositivelySpan3D(vectorInwards);
 }

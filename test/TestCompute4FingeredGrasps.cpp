@@ -18,17 +18,16 @@ inline void test_uniformAxis(ObjectSurfacePoints &osp, int npointsPerAxis, doubl
     Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, samplePoints, halfAngle);
     std::vector<Grasp> uniqueSol;
     Compute4FingeredGrasps::uniqueSol(uniqueSol, sol);
-    /*
+    CHECK_EQUAL(nUniqueSol, uniqueSol.size());
+
     std::vector<std::vector<Grasp> > sol_naive;
     Compute4FingeredGrasps::compute4FingeredGrasps_naive(sol_naive, osp.surfacePoints, samplePoints, halfAngle);
     std::vector<Grasp> uniqueSol_naive;
     Compute4FingeredGrasps::uniqueSol(uniqueSol_naive, sol_naive);
-    CHECK_EQUAL(uniqueSol_naive.size(), uniqueSol.size());
-    */
+    CHECK_EQUAL(nUniqueSol, uniqueSol_naive.size());
+
     std::set<Grasp> solSet;
     std::vector<int> sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, samplePoints, halfAngle);
-
-    CHECK_EQUAL(nUniqueSol, uniqueSol.size());
     CHECK_EQUAL(nUniqueSol, solSet.size());
 }
 

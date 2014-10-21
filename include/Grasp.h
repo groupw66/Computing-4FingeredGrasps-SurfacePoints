@@ -11,10 +11,11 @@ class Grasp
     public:
         Grasp();
         virtual ~Grasp();
-        Grasp(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4);
-        Grasp(const std::vector<SurfacePoint> &_surfacePoints);
 
-        std::vector<SurfacePoint> surfacePoints;
+        Grasp(unsigned int sp1, unsigned int sp2, unsigned int sp3, unsigned int sp4);
+        Grasp(const std::vector<unsigned int> &_surfacePoints);
+
+        std::vector<unsigned int> surfacePoints;
 
         //compare
         inline bool operator< (Grasp const& r) const {

@@ -10,7 +10,7 @@ Grasp::~Grasp()
     //dtor
 }
 
-Grasp::Grasp(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4)
+Grasp::Grasp(unsigned int sp1, unsigned int sp2, unsigned int sp3, unsigned int sp4)
 {
     surfacePoints.clear();
     surfacePoints.push_back(sp1);
@@ -21,7 +21,7 @@ Grasp::Grasp(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint 
     //cm = _cm;
 }
 
-Grasp::Grasp(const std::vector<SurfacePoint>& _surfacePoints)
+Grasp::Grasp(const std::vector<unsigned int>& _surfacePoints)
 {
     surfacePoints.clear();
     surfacePoints.insert(surfacePoints.end(), _surfacePoints.begin(), _surfacePoints.end());

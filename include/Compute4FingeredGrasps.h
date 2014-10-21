@@ -19,17 +19,17 @@ namespace Compute4FingeredGrasps
     void compute4FingeredGrasps_naive(std::vector<std::vector<Grasp> > &sol, const std::vector<SurfacePoint> &surfacePoints,
                                                const std::vector<Eigen::Vector3d> &samplePoints, double halfAngle=10.d);
 
-    void pointInConesFilter(std::vector<SurfacePoint> &filtereds, const std::vector<SurfacePoint> &surfacePoints,
+    void pointInConesFilter(std::vector<unsigned int> &filtereds, const std::vector<SurfacePoint> &surfacePoints,
                                                Eigen::Vector3d point, double halfAngle=10.d);
 
     // using orthogonal range search with fractional cascading in force dual representation
 	// O(n^3 (logn + K))
-    void findEquilibriumGrasps_forceDual(std::vector<Grasp>  &sol, const std::vector<SurfacePoint> &M, Eigen::Vector3d samplePoint);
+    void findEquilibriumGrasps_forceDual(std::vector<Grasp>  &sol, const std::vector<unsigned int> &M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);
 
     // O(n^4)
-    void findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<SurfacePoint> &M, Eigen::Vector3d samplePoint);
+    void findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<unsigned int>& M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);
 
-    bool isEquilibriumGrasp(Grasp grasp, Eigen::Vector3d samplePoint);
+    bool isEquilibriumGrasp(Grasp grasp, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);
 
     inline void uniqueSol(std::vector<Grasp>  &uniqueGrasps, const std::vector<std::vector<Grasp> > &allGrasps)
     {
