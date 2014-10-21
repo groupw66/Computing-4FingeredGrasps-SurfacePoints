@@ -81,7 +81,6 @@ int main(int argc,char *argv[])
         printf("SamplingPoints::randomNormalDist\n");
         //std::vector<std::vector<Grasp> > sol;
         //Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, samplePoints, halfAngle);
-        solSet;
         sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, samplePoints, halfAngle);
         printf("Compute4FingeredGrasps success\n");
 
