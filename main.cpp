@@ -74,6 +74,27 @@ int main(int argc,char *argv[])
         ofsUniform.close();
         printf("finish RandomUniform\n");
 
+        //randomNormalDist
+        printf("start randomNormalDist\n");
+        Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
+        samplePoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint);
+        printf("SamplingPoints::randomNormalDist\n");
+        //std::vector<std::vector<Grasp> > sol;
+        //Compute4FingeredGrasps::compute4FingeredGrasps(sol, osp.surfacePoints, samplePoints, halfAngle);
+        solSet;
+        sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, samplePoints, halfAngle);
+        printf("Compute4FingeredGrasps success\n");
+
+        std::ofstream ofsNormalDist ("out/"+fName + ".normalDist.out", std::ofstream::ate);
+        ofsNormalDist.unsetf ( std::ios::floatfield );
+        ofsNormalDist.precision(std::numeric_limits<long double>::digits10);
+        ofsNormalDist << sizeSols.size() << "\n";
+        for(int sizeSol : sizeSols){
+            ofsNormalDist << sizeSol << "\n";
+        }
+        ofsNormalDist.close();
+        printf("finish randomNormalDist\n");
+
     }
     else{
         return UnitTest::RunAllTests();
