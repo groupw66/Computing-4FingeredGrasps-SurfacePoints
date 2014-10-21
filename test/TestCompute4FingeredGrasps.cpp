@@ -47,7 +47,7 @@ inline void test_uniformAxis(ObjectSurfacePoints &osp, int npointsPerAxis, doubl
 
 TEST(compute4FingeredGrasps_cow500_16PointsPerAxis)
 {
-    char filename[1000] = "meshes/spectralMesh/cow500.txt";
+    char filename[1000] = "test/meshes/spectralMesh/cow500.txt";
     int npointsPerAxis = 16;
     double halfAngle = 10.d;
     int nUniqueSol = 35255;
@@ -59,7 +59,7 @@ TEST(compute4FingeredGrasps_cow500_16PointsPerAxis)
 
 TEST(compute4FingeredGrasps_CatLying_800_8PointsPerAxis)
 {
-    char filename[1000] = "meshes/KIT/CatLying_800.obj";
+    char filename[1000] = "test/meshes/KIT/CatLying_800.obj";
     int npointsPerAxis = 8;
     double halfAngle = 10.d;
     int nUniqueSol = 126939;

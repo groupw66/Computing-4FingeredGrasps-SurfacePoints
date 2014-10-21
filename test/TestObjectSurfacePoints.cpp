@@ -7,7 +7,7 @@ namespace
 
 TEST(ObjectSurfacePoints_ctor_OBJFile_Amicelli_800)
 {
-    OBJFile obj("meshes/KIT/Amicelli_800.obj");
+    OBJFile obj("test/meshes/KIT/Amicelli_800.obj");
     //int nPoints = 400;
     int nFacets = 798;
     ObjectSurfacePoints osp(obj);
@@ -16,7 +16,7 @@ TEST(ObjectSurfacePoints_ctor_OBJFile_Amicelli_800)
 
 TEST(ObjectSurfacePoints_ctor_PositionsNormalsFile_ammo50)
 {
-    PositionsNormalsFile obj("meshes/spectralMesh/ammo50.txt");
+    PositionsNormalsFile obj("test/meshes/spectralMesh/ammo50.txt");
     int nPoints = 50;
     ObjectSurfacePoints osp(obj);
     CHECK_EQUAL(nPoints, osp.surfacePoints.size());

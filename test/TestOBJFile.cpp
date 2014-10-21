@@ -7,7 +7,7 @@ namespace
 
 TEST(OBJFile_Amicelli_800)
 {
-    OBJFile obj("meshes/KIT/Amicelli_800.obj");
+    OBJFile obj("test/meshes/KIT/Amicelli_800.obj");
     int nPoints = 400;
     int nFacets = 798;
     CHECK_EQUAL(nPoints, obj.vertexs.size());
