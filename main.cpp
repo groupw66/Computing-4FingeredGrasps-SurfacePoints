@@ -71,12 +71,12 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
     // SamplingPoints
     std::vector<Eigen::Vector3d> sampledPoints;
     tmr.reset();
-    if(randomMode == "-ru"){
+    if(randomMode == "uniform"){
         printf("SamplingPoints::randomUniform start\n");
         sampledPoints = SamplingPoints::randomUniform(osp.minAABB, osp.maxAABB, nSamplePoint);
         printf("SamplingPoints::randomUniform ok\n");
     }
-    else if(randomMode == "-rn"){
+    else if(randomMode == "normalDist"){
         printf("SamplingPoints::randomNormalDist start\n");
         Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
         sampledPoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint);
@@ -174,7 +174,7 @@ int main(int argc,char *argv[])
         std::string mode;
         if(argc >= 2){
             mode = argv[1];
-            if(mode == "-ru" || mode == "-rn"){
+            if(mode == "uniform" || mode == "normalDist"){
                 std::string objFilename;
                 std::string outFilename;
                 int nSamplePoint = 10000;
@@ -182,9 +182,9 @@ int main(int argc,char *argv[])
                 if(argc >= 3){
                     objFilename = argv[2];
                     outFilename = objFilename.substr(objFilename.find_last_of("/") + 1);
-                    if(mode == "-ru")
+                    if(mode == "uniform")
                         outFilename += ".uniform";
-                    else if(mode == "-rn")
+                    else if(mode == "normalDist")
                         outFilename += ".normalDist";
                 }
                 if(argc >= 4){
