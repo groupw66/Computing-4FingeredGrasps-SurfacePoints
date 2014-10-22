@@ -21,6 +21,8 @@ void PositionsNormalsFile::open(const char* _filename)
     std::ifstream myfile(_filename);
     int n;
     myfile >> n;
+    positions.reserve(n);
+    normals.reserve(n);
     for(int i=0 ; i<n ; ++i){
         double a,b,c,d,e,f;
         myfile >> a >> b >> c >> d >> e >> f;
