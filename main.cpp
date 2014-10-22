@@ -57,7 +57,7 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
     else {
         std::cout << "Not supported file..." << std::endl;
     }
-    printf("Write .surfacePoints start\n");
+    //printf("%s | Write .surfacePoints start\n", outFilename.c_str());
     ofs.open(outFilename + ".surfacePoints", std::ofstream::ate);
     ofs << osp.surfacePoints.size() << "\n";
     for(SurfacePoint sp : osp.surfacePoints){
@@ -65,36 +65,36 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         ofs << sp.normal.x() << " " << sp.normal.y() << " " << sp.normal.z() << "\n";
     }
     ofs.close();
-    printf("Write .surfacePoints ok\n");
-
+    //printf("%s | Write .surfacePoints ok\n", outFilename.c_str());
 
     // SamplingPoints
     std::vector<Eigen::Vector3d> sampledPoints;
     tmr.reset();
     if(randomMode == "uniform"){
-        printf("SamplingPoints::randomUniform start\n");
+        //printf("%s | SamplingPoints::randomUniform start\n", outFilename.c_str());
         sampledPoints = SamplingPoints::randomUniform(osp.minAABB, osp.maxAABB, nSamplePoint);
-        printf("SamplingPoints::randomUniform ok\n");
+        //printf("%s | SamplingPoints::randomUniform ok\n", outFilename.c_str());
     }
     else if(randomMode == "normalDist"){
-        printf("SamplingPoints::randomNormalDist start\n");
+        //printf("%s | SamplingPoints::randomNormalDist start\n", outFilename.c_str());
         Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
         sampledPoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint);
-        printf("SamplingPoints::randomNormalDist ok\n");
+        //printf("%s | SamplingPoints::randomNormalDist ok\n", outFilename.c_str());
     }
     sampleRuntime = tmr.elapsed();
-
-    printf("Write .sampledPoints start\n");
+    /*
+    printf("%s | Write .sampledPoints start\n", outFilename.c_str());
     ofs.open(outFilename + ".sampledPoints", std::ofstream::ate);
     ofs << sampledPoints.size() << "\n";
     for(Eigen::Vector3d sp : sampledPoints){
         ofs << sp.x() << " " << sp.y() << " " << sp.z() << "\n";
     }
     ofs.close();
-    printf("Write .sampledPoints ok\n");
+    printf("%s | Write .sampledPoints ok\n", outFilename.c_str());
+    */
 
     // Compute4FingeredGrasps
-    printf("Compute4FingeredGrasps start\n");
+    printf("%s | Compute4FingeredGrasps start\n", outFilename.c_str());
     std::set<Grasp> solSet;
     std::vector<int> sizeSols;
     std::vector<std::vector<Grasp> > sols;
@@ -126,9 +126,9 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         }
         eachSampleRuntimes.push_back(tmr.elapsed());
     }
-    printf("Compute4FingeredGrasps ok\n");
+    printf("%s | Compute4FingeredGrasps ok\n", outFilename.c_str());
 
-    printf("Write .runtime start\n");
+    //printf("%s | Write .runtime start\n", outFilename.c_str());
     ofs.open(outFilename + ".runtime", std::ofstream::ate);
     ofs << "sampleRuntime: " << sampleRuntime << "\n";
     ofs << "pointInConesRuntimes: " << pointInConesRuntimes << "\n";
@@ -138,18 +138,18 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         ofs << eachSampleRuntime << "\n";
     }
     ofs.close();
-    printf("Write .runtime ok\n");
+    //printf("%s | Write .runtime ok\n", outFilename.c_str());
 
-    printf("Write .sizeSols start\n");
+    //printf("%s | Write .sizeSols start\n", outFilename.c_str());
     ofs.open(outFilename + ".sizeSols", std::ofstream::ate);
     ofs << sizeSols.size() << "\n";
     for(int sizeSol : sizeSols){
         ofs << sizeSol << "\n";
     }
     ofs.close();
-    printf("Write .sizeSols ok\n");
+    //printf("%s | Write .sizeSols ok\n", outFilename.c_str());
 
-    printf("Write .sols start\n");
+    //printf("%s | Write .sols start\n", outFilename.c_str());
     ofs.open(outFilename + ".sols", std::ofstream::ate);
     ofs << sols.size() << "\n";
     for(std::vector<Grasp> sol : sols){
@@ -162,9 +162,9 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         }
     }
     ofs.close();
-    printf("Write .sols ok\n");
-
-    printf("--------------------\n");
+    //printf("%s | Write .sols ok\n", outFilename.c_str());
+    printf("%s | Write output ok\n", outFilename.c_str());
+    printf("---------------------------------------\n");
 }
 
 int main(int argc,char *argv[])
