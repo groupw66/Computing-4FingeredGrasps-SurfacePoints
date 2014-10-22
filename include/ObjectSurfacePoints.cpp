@@ -13,6 +13,7 @@ ObjectSurfacePoints::~ObjectSurfacePoints()
 void ObjectSurfacePoints::open(const OBJFile &_objFile)
 {
     surfacePoints.clear();
+    surfacePoints.reserve(_objFile.facets.size());
     for(Eigen::Vector3i facet : _objFile.facets){
         int i=facet.x(), j=facet.y(), k=facet.z();
         Eigen::Vector3d position = (_objFile.vertexs[i] + _objFile.vertexs[j] + _objFile.vertexs[k])/3.0;
@@ -27,6 +28,7 @@ void ObjectSurfacePoints::open(const OBJFile &_objFile)
 void ObjectSurfacePoints::open(const PositionsNormalsFile &_positionsNormalsFile)
 {
     surfacePoints.clear();
+    surfacePoints.reserve(_positionsNormalsFile.positions.size());
     for(unsigned int i=0 ; i<_positionsNormalsFile.positions.size() ; ++i){
         Eigen::Vector3d position = _positionsNormalsFile.positions[i];
         Eigen::Vector3d normal = _positionsNormalsFile.normals[i];
