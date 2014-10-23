@@ -57,13 +57,6 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
     else {
         std::cout << "Not supported file..." << std::endl;
     }
-    ofs.open(outFilename + ".surfacePoints", std::ofstream::ate);
-    ofs << osp.surfacePoints.size() << "\n";
-    for(SurfacePoint sp : osp.surfacePoints){
-        ofs << sp.position.x() << " " << sp.position.y() << " " << sp.position.z() << " ";
-        ofs << sp.normal.x() << " " << sp.normal.y() << " " << sp.normal.z() << "\n";
-    }
-    ofs.close();
 
     // SamplingPoints
     std::vector<Eigen::Vector3d> sampledPoints;
