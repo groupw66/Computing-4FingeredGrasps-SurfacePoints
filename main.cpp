@@ -157,6 +157,20 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
     printf("---------------------------------------\n");
 }
 
+void cvtOBJtoSurfacePoints(std::string objFilename, std::string outFilename)
+{
+    OBJFile obj(objFilename.c_str());
+    ObjectSurfacePoints osp(obj);
+    std::vector<Eigen::Vector3d> positions;
+    std::vector<Eigen::Vector3d> normals;
+    for(SurfacePoint sp : osp.surfacePoints){
+        positions.push_back(sp.position);
+        normals.push_back(sp.normal);
+    }
+    PositionsNormalsFile out(positions, normals);
+    out.write(outFilename.c_str());
+}
+
 int main(int argc,char *argv[])
 {
     if(argc > 1){
@@ -183,6 +197,9 @@ int main(int argc,char *argv[])
                     halfAngle = atof(argv[5]);
                 }
                 runCompute4FingeredGrasps(mode, objFilename, outFilename, nSamplePoint, halfAngle);
+            }
+            else if(mode == "cvtOBJtoSurfacePoints"){
+                cvtOBJtoSurfacePoints(argv[2], argv[3]);
             }
             else{
                 std::cout << "Unknown command..." << std::endl;
