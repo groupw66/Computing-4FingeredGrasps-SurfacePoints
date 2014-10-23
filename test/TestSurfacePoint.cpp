@@ -2,6 +2,7 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include "SurfacePoint.h"
+#include "BasicGeometry.hpp"
 
 namespace
 {
@@ -26,40 +27,37 @@ TEST(SurfacePoint_assign)
     CHECK_EQUAL(normal.normalized(), surfacePoint.normal);
 }
 
-TEST(SurfacePoint_lessthan)
+TEST(SurfacePoint_lessthan_true)
 {
     SurfacePoint surfacePoint1(Eigen::Vector3d(0.d,1.d,2.d), Eigen::Vector3d(3.d,4.d,5.d));
     SurfacePoint surfacePoint2(Eigen::Vector3d(0.d,2.d,2.d), Eigen::Vector3d(3.d,4.d,5.d));
     CHECK_EQUAL(true, surfacePoint1 < surfacePoint2);
-    CHECK_EQUAL(true, surfacePoint1 <= surfacePoint2);
-    CHECK_EQUAL(false, surfacePoint1 == surfacePoint2);
-    CHECK_EQUAL(false, surfacePoint1 >= surfacePoint2);
-    CHECK_EQUAL(false, surfacePoint1 > surfacePoint2);
-    CHECK_EQUAL(true, surfacePoint1 != surfacePoint2);
 }
 
-TEST(SurfacePoint_equal)
+TEST(SurfacePoint_lessthan_false0)
+{
+    SurfacePoint surfacePoint1(Eigen::Vector3d(0.d,1.d,2.d), Eigen::Vector3d(3.d,4.d,5.d));
+    SurfacePoint surfacePoint2(Eigen::Vector3d(0.d,1.d,2.d), Eigen::Vector3d(1.d,4.d,5.d));
+    CHECK_EQUAL(false, surfacePoint1 < surfacePoint2);
+}
+
+TEST(SurfacePoint_lessthan_false1)
 {
     SurfacePoint surfacePoint1(Eigen::Vector3d(0.d,1.d,2.d), Eigen::Vector3d(3.d,4.d,5.d));
     SurfacePoint surfacePoint2(Eigen::Vector3d(0.d,1.d,2.d), Eigen::Vector3d(3.d,4.d,5.d));
     CHECK_EQUAL(false, surfacePoint1 < surfacePoint2);
-    CHECK_EQUAL(true, surfacePoint1 <= surfacePoint2);
-    CHECK_EQUAL(true, surfacePoint1 == surfacePoint2);
-    CHECK_EQUAL(true, surfacePoint1 >= surfacePoint2);
-    CHECK_EQUAL(false, surfacePoint1 > surfacePoint2);
-    CHECK_EQUAL(false, surfacePoint1 != surfacePoint2);
 }
 
-TEST(SurfacePoint_greaterthan)
+TEST(SurfacePoint_getFrictionCone)
 {
-    SurfacePoint surfacePoint1(Eigen::Vector3d(0.d,1.d,2.d), Eigen::Vector3d(30.d,4.d,5.d));
-    SurfacePoint surfacePoint2(Eigen::Vector3d(0.d,1.d,2.d), Eigen::Vector3d(3.d,4.d,5.d));
-    CHECK_EQUAL(false, surfacePoint1 < surfacePoint2);
-    CHECK_EQUAL(false, surfacePoint1 <= surfacePoint2);
-    CHECK_EQUAL(false, surfacePoint1 == surfacePoint2);
-    CHECK_EQUAL(true, surfacePoint1 >= surfacePoint2);
-    CHECK_EQUAL(true, surfacePoint1 > surfacePoint2);
-    CHECK_EQUAL(true, surfacePoint1 != surfacePoint2);
+    SurfacePoint surfacePoint1(Eigen::Vector3d(0.d,1.d,2.d), Eigen::Vector3d(3.d,4.d,5.d));
+    double halfAngle = 10.d;
+    int nPyramidSide = 8;
+    std::vector<Eigen::Vector3d> frictionCone = surfacePoint1.getFrictionCone(halfAngle, nPyramidSide);
+    CHECK_EQUAL(8, frictionCone.size());
+    for(auto f : frictionCone){
+        CHECK_CLOSE(halfAngle*M_PI/180.d, Geometry::angleBetweenVectors(f,surfacePoint1.normal), 1e-6);
+    }
 }
 
 }
