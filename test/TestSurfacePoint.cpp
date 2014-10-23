@@ -60,4 +60,18 @@ TEST(SurfacePoint_getFrictionCone)
     }
 }
 
+TEST(SurfacePoint_getWrenchCone)
+{
+    SurfacePoint surfacePoint1(Eigen::Vector3d(0.d,1.d,2.d), Eigen::Vector3d(3.d,4.d,5.d));
+    Eigen::Vector3d cm(0,0,0);
+    double halfAngle = 10.d;
+    int nPyramidSide = 8;
+    std::vector<Wrench> wrenchCone = surfacePoint1.getWrenchCone(cm, halfAngle, nPyramidSide);
+    CHECK_EQUAL(8, wrenchCone.size());
+    for(auto wrench : wrenchCone){
+        CHECK_CLOSE(halfAngle*M_PI/180.d, Geometry::angleBetweenVectors(wrench.force(),surfacePoint1.normal), 1e-6);
+        //TO-DO
+    }
+}
+
 }

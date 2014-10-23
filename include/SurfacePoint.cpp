@@ -47,4 +47,17 @@ std::vector<Eigen::Vector3d> SurfacePoint::getFrictionCone(double halfAngle, int
     return frictionCone;
 }
 
+std::vector<Wrench> SurfacePoint::getWrenchCone(Eigen::Vector3d cm, double halfAngle, int nPyramidSide)
+{
+    std::vector<Eigen::Vector3d> frictionCone = getFrictionCone(halfAngle, nPyramidSide);
+    std::vector<Wrench> wrenchCone;
+    Eigen::Vector3d p = position - cm;
+    for(auto force : frictionCone){
+        wrenchCone.push_back(Wrench(p, force));
+    }
+    return wrenchCone;
+}
+
+
+
 

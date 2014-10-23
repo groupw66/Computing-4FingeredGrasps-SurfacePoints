@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include <tuple>
 #include <cmath>
+#include "Wrench.h"
 
 #define DEFAULT_N_PYRAMID_SIDE 24 // 15 degree
 
@@ -21,7 +22,8 @@ class SurfacePoint
             normal = _normal.normalized();
         }
 
-        std::vector<Eigen::Vector3d> getFrictionCone(double halfAngle=10.d, int nPyramidSide=DEFAULT_N_PYRAMID_SIDE);
+        std::vector<Eigen::Vector3d> getFrictionCone(double halfAngle = 10.d, int nPyramidSide = DEFAULT_N_PYRAMID_SIDE);
+        std::vector<Wrench> getWrenchCone(Eigen::Vector3d cm = Eigen::Vector3d(0,0,0), double halfAngle = 10.d, int nPyramidSide = DEFAULT_N_PYRAMID_SIDE);
 
         inline void operator= (SurfacePoint const& r) {
             this->position = r.position;
