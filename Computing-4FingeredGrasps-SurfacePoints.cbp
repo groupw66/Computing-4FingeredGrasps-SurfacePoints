@@ -62,6 +62,8 @@
 		<Unit filename="include/SamplingPoints.h" />
 		<Unit filename="include/SurfacePoint.cpp" />
 		<Unit filename="include/SurfacePoint.h" />
+		<Unit filename="include/Wrench.cpp" />
+		<Unit filename="include/Wrench.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="test/TestBasicGeometry.cpp" />
 		<Unit filename="test/TestCompute4FingeredGrasps.cpp" />
@@ -71,6 +73,7 @@
 		<Unit filename="test/TestPositionsNormalsFile.cpp" />
 		<Unit filename="test/TestSamplingPoints.cpp" />
 		<Unit filename="test/TestSurfacePoint.cpp" />
+		<Unit filename="test/TestWrench.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />
