@@ -81,6 +81,12 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         sampledPoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint);
         //printf("%s | SamplingPoints::randomNormalDist ok\n", outFilename.c_str());
     }
+    else if(randomMode == "normalDistLimit"){
+        //printf("%s | SamplingPoints::randomNormalDist start\n", outFilename.c_str());
+        Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
+        sampledPoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint, osp.minAABB, osp.maxAABB);
+        //printf("%s | SamplingPoints::randomNormalDist ok\n", outFilename.c_str());
+    }
     sampleRuntime = tmr.elapsed();
     /*
     printf("%s | Write .sampledPoints start\n", outFilename.c_str());
@@ -174,7 +180,7 @@ int main(int argc,char *argv[])
         std::string mode;
         if(argc >= 2){
             mode = argv[1];
-            if(mode == "uniform" || mode == "normalDist"){
+            if(mode == "uniform" || mode == "normalDist" || mode == "normalDistLimit"){
                 std::string objFilename;
                 std::string outFilename;
                 int nSamplePoint = 10000;
@@ -182,10 +188,7 @@ int main(int argc,char *argv[])
                 if(argc >= 3){
                     objFilename = argv[2];
                     outFilename = objFilename.substr(objFilename.find_last_of("/") + 1);
-                    if(mode == "uniform")
-                        outFilename += ".uniform";
-                    else if(mode == "normalDist")
-                        outFilename += ".normalDist";
+                    outFilename += "." + mode;
                 }
                 if(argc >= 4){
                     outFilename = argv[3];

@@ -60,5 +60,29 @@ std::vector<Eigen::Vector3d> SamplingPoints::randomNormalDist(Eigen::Vector3d me
     return points;
 }
 
+std::vector<Eigen::Vector3d> SamplingPoints::randomNormalDist(Eigen::Vector3d mean, Eigen::Vector3d sd, int npoint, Eigen::Vector3d minAABB, Eigen::Vector3d maxAABB)
+{
+    std::vector<Eigen::Vector3d> points;
+    std::normal_distribution<double> randX(mean.x(), sd.x());
+    std::normal_distribution<double> randY(mean.y(), sd.y());
+    std::normal_distribution<double> randZ(mean.z(), sd.z());
+    std::default_random_engine rng;
+    rng.seed(std::random_device{}());
+    for(int i=0 ; i<npoint ; ++i){
+        while(true){
+            double x = randX(rng),
+                    y = randY(rng),
+                    z = randZ(rng);
+            if( x < maxAABB.x() && x > minAABB.x() &&
+                y < maxAABB.y() && y > minAABB.y() &&
+                z < maxAABB.z() && z > minAABB.z() ){
+                points.push_back(Eigen::Vector3d(x, y, z));
+                break;
+            }
+        }
+    }
+    return points;
+}
+
 
 

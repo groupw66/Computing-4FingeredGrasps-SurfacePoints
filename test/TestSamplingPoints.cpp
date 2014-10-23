@@ -38,7 +38,18 @@ TEST(SamplingPoints_randomNormalDist)
     Eigen::Vector3d mean(0,0,0);
     Eigen::Vector3d sd(10,20,30);
     int npoints = 125000;
-    std::vector<Eigen::Vector3d> points = SamplingPoints::randomUniform(mean, sd, npoints);
+    std::vector<Eigen::Vector3d> points = SamplingPoints::randomNormalDist(mean, sd, npoints);
+    CHECK_EQUAL(npoints, points.size());
+}
+
+TEST(SamplingPoints_randomNormalDist2)
+{
+    Eigen::Vector3d mean(0,0,0);
+    Eigen::Vector3d sd(10,20,30);
+    Eigen::Vector3d minAABB(-1000.5d, -500.6d, -200.3d);
+    Eigen::Vector3d maxAABB(555.5d, 100.2d, 333.3d);
+    int npoints = 125000;
+    std::vector<Eigen::Vector3d> points = SamplingPoints::randomNormalDist(mean, sd, npoints, minAABB, maxAABB);
     CHECK_EQUAL(npoints, points.size());
 }
 
