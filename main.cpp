@@ -30,6 +30,12 @@ private:
 
 void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, std::string outFilename, int nSamplePoint, double halfAngle)
 {
+    std::ifstream objFile(objFilename.c_str());
+    if(!objFile.is_open()){
+        std::cout << "!" << objFilename << std::endl;
+        return;
+    }
+    objFile.close();
     std::cout << outFilename << std::endl;
 
     // runtime
@@ -154,6 +160,12 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
 
 void cvtOBJtoSurfacePoints(std::string objFilename, std::string outFilename)
 {
+    std::ifstream objFile(objFilename.c_str());
+    if(!objFile.is_open()){
+        std::cout << "!" << objFilename << std::endl;
+        return;
+    }
+    objFile.close();
     OBJFile obj(objFilename.c_str());
     ObjectSurfacePoints osp(obj);
     std::vector<Eigen::Vector3d> positions;
@@ -168,6 +180,12 @@ void cvtOBJtoSurfacePoints(std::string objFilename, std::string outFilename)
 void computeMindist(std::string surfacePointFilename, std::string solFilename, std::string outFilename,
                     double halfAngle = 10.d)
 {
+    std::ifstream objFile(surfacePointFilename.c_str());
+    if(!objFile.is_open()){
+        std::cout << "!" << surfacePointFilename << std::endl;
+        return;
+    }
+    objFile.close();
     PositionsNormalsFile obj(surfacePointFilename.c_str());
     ObjectSurfacePoints osp(obj);
     std::ifstream solFile(solFilename);
@@ -176,9 +194,11 @@ void computeMindist(std::string surfacePointFilename, std::string solFilename, s
     outFile.precision(std::numeric_limits<long double>::digits10);
     if(!solFile.is_open()){
         std::cout << "!" << solFilename << std::endl;
+        return;
     }
     if(!outFile.is_open()){
         std::cout << "!" << outFilename << std::endl;
+        return;
     }
     int n;
     solFile >> n;
