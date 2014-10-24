@@ -17,6 +17,10 @@ class Grasp
 
         std::vector<unsigned int> surfacePoints;
 
+        inline unsigned int operator[] (unsigned int i){
+            return surfacePoints[i];
+        }
+
         //compare
         inline bool operator< (Grasp const& r) const {
             const Grasp& l = *this;
