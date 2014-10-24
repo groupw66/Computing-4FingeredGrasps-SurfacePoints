@@ -9,6 +9,7 @@
 #include "ObjectSurfacePoints.h"
 #include "ForceClosure.h"
 #include "Timer.h"
+#include "dae/DaeHeuristic.h"
 
 using namespace std;
 
@@ -161,6 +162,7 @@ void cvtOBJtoSurfacePoints(std::string objFilename, std::string outFilename)
     PositionsNormalsFile out(positions, normals);
     out.write(outFilename.c_str());
 }
+
 void computeMindist(std::string surfacePointFilename, std::string solFilename, std::string outFilename,
                     double halfAngle = 10.d)
 {
@@ -207,6 +209,48 @@ void computeMindist(std::string surfacePointFilename, std::string solFilename, s
     outFile.close();
 
 }
+
+void allFC(std::string surfacePointFilename, std::string outFilename, double halfAngle = 10.d)
+{
+    Timer tmr;
+    std::ifstream objFile(surfacePointFilename.c_str());
+    if(!objFile.is_open()){
+        std::cout << "!" << surfacePointFilename << std::endl;
+        return;
+    }
+    objFile.close();
+    PositionsNormalsFile obj(surfacePointFilename.c_str());
+    ObjectSurfacePoints osp(obj);
+    std::ofstream outFile(outFilename);
+    outFile.unsetf ( std::ios::floatfield );
+    outFile.precision(std::numeric_limits<long double>::digits10);
+    if(!outFile.is_open()){
+        std::cout << "!" << outFilename << std::endl;
+        return;
+    }
+    DaeHeuristicChecker daeHeuristicChecker(halfAngle * M_PI / 180.d);
+    unsigned int nSurfacePoint = osp.surfacePoints.size();
+    for(unsigned int a=0 ; a<nSurfacePoint ; ++a){
+        for(unsigned int b=a+1 ; b<nSurfacePoint ; ++b){
+            tmr.reset();
+            for(unsigned int c=b+1 ; c<nSurfacePoint ; ++c){
+                for(unsigned int d=c+1 ; d<nSurfacePoint ; ++d){
+                    //std::cout << a << " " << b << " " << c << " " << d << std::endl;
+                    bool passFilter = daeHeuristicChecker.isForceClosure(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d]);
+                    if(passFilter){
+                        double mindist = ForceClosure::getMindist_Qhull(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d], osp.cm);
+                        if(mindist > 0){
+                            outFile << a << " " << b << " " << c << " " << d << " " << mindist << "\n";
+                        }
+                    }
+                }
+            }
+            int ntmp = (nSurfacePoint-b+1) * (nSurfacePoint-b+2);
+            std::cout << a << " " << b << " : " << ntmp << " : " << tmr.elapsed()/ntmp << std::endl;
+        }
+    }
+}
+
 int main(int argc,char *argv[])
 {
     if(argc > 1){
@@ -239,6 +283,9 @@ int main(int argc,char *argv[])
             }
             else if(mode == "mindist"){
                 computeMindist(argv[2], argv[3], argv[4], atof(argv[5]));
+            }
+            else if(mode == "allFC"){
+                allFC(argv[2], argv[3], atof(argv[4]));
             }
             else{
                 std::cout << "Unknown command..." << std::endl;
