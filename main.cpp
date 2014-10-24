@@ -7,6 +7,7 @@
 #include "OBJFile.h"
 #include "PositionsNormalsFile.h"
 #include "ObjectSurfacePoints.h"
+#include "ForceClosure.h"
 #include <chrono>
 
 using namespace std;
@@ -163,7 +164,33 @@ void cvtOBJtoSurfacePoints(std::string objFilename, std::string outFilename)
     PositionsNormalsFile out(positions, normals);
     out.write(outFilename.c_str());
 }
+void computeMindist(std::string surfacePointFilename, std::string solFilename, std::string outFilename,
+                    double halfAngle = 10.d)
+{
+    PositionsNormalsFile obj(surfacePointFilename.c_str());
+    ObjectSurfacePoints osp(obj);
+    std::ifstream solFile(solFilename);
+    if(!solFile.is_open()){
+        std::cout << "!" << solFilename << std::endl;
+    }
+    int n;
+    solFile >> n;
+    Timer tmr;
+    for(int i=0 ; i<n; ++i){
+        int nSol;
+        solFile >> nSol;
+        tmr.reset();
+        for(int j=0 ; j<nSol ; ++j){
+            int a, b, c, d;
+            solFile >> a >> b >> c >> d;
+            double mindist = ForceClosure::getMindist_Qhull(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d], osp.cm);
+            //std::cout << mindist << std::endl;
+        }
+        if(nSol>0)
+            std::cout << nSol << " : " << tmr.elapsed()/nSol << std::endl;
+    }
 
+}
 int main(int argc,char *argv[])
 {
     if(argc > 1){
@@ -193,6 +220,9 @@ int main(int argc,char *argv[])
             }
             else if(mode == "cvtOBJtoSurfacePoints"){
                 cvtOBJtoSurfacePoints(argv[2], argv[3]);
+            }
+            else if(mode == "mindist"){
+                computeMindist(argv[2], argv[3], argv[4], atof(argv[5]));
             }
             else{
                 std::cout << "Unknown command..." << std::endl;
