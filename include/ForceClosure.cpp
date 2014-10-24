@@ -31,7 +31,7 @@ double ForceClosure::getMindist_Qhull(std::vector<Wrench> wrenchs)
     qhull.runQhull("", 6, wrenchs.size(), points, "");
     std::vector<orgQhull::QhullFacet> facets=qhull.facetList().toStdVector();
     for(const orgQhull::QhullFacet &facet : qhull.facetList().toStdVector()){
-        mindist = std::min(mindist, facet.getFacetT()->offset);
+        mindist = std::min(mindist, -facet.getFacetT()->offset);
     }
     return mindist;
 }
