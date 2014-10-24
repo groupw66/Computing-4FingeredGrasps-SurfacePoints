@@ -109,9 +109,10 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
             //solSet.insert(fcGrasps.begin(),fcGrasps.end());
             for(Grasp g : fcGrasps){
                 if(solSet.insert(g).second){
-                    sols[i].push_back(g);
+                    //sols[i].push_back(g);
                 }
             }
+            sols[i].insert(sols[i].end(), fcGrasps.begin(), fcGrasps.end());
             sizeSols.push_back(solSet.size());
         }
         eachSampleRuntimes.push_back(tmr.elapsed());
@@ -170,25 +171,36 @@ void computeMindist(std::string surfacePointFilename, std::string solFilename, s
     PositionsNormalsFile obj(surfacePointFilename.c_str());
     ObjectSurfacePoints osp(obj);
     std::ifstream solFile(solFilename);
+    std::ofstream outFile(outFilename);
+    outFile.unsetf ( std::ios::floatfield );
+    outFile.precision(std::numeric_limits<long double>::digits10);
     if(!solFile.is_open()){
         std::cout << "!" << solFilename << std::endl;
     }
+    if(!outFile.is_open()){
+        std::cout << "!" << outFilename << std::endl;
+    }
     int n;
     solFile >> n;
+    outFile << n << "\n";
     Timer tmr;
     for(int i=0 ; i<n; ++i){
         int nSol;
         solFile >> nSol;
+        outFile << nSol << "\n";
         tmr.reset();
         for(int j=0 ; j<nSol ; ++j){
             int a, b, c, d;
             solFile >> a >> b >> c >> d;
             double mindist = ForceClosure::getMindist_Qhull(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d], osp.cm);
+            outFile << mindist << "\n";
             //std::cout << mindist << std::endl;
         }
         if(nSol>0)
             std::cout << nSol << " : " << tmr.elapsed()/nSol << std::endl;
     }
+    solFile.close();
+    outFile.close();
 
 }
 int main(int argc,char *argv[])
