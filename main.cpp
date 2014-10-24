@@ -231,8 +231,8 @@ void allFC(std::string surfacePointFilename, std::string outFilename, double hal
     DaeHeuristicChecker daeHeuristicChecker(halfAngle * M_PI / 180.d);
     unsigned int nSurfacePoint = osp.surfacePoints.size();
     for(unsigned int a=0 ; a<nSurfacePoint ; ++a){
+        std::cout << outFilename << " : a = " << a << std::endl;
         for(unsigned int b=a+1 ; b<nSurfacePoint ; ++b){
-            tmr.reset();
             for(unsigned int c=b+1 ; c<nSurfacePoint ; ++c){
                 for(unsigned int d=c+1 ; d<nSurfacePoint ; ++d){
                     //std::cout << a << " " << b << " " << c << " " << d << std::endl;
@@ -245,8 +245,6 @@ void allFC(std::string surfacePointFilename, std::string outFilename, double hal
                     }
                 }
             }
-            int ntmp = (nSurfacePoint-b+1) * (nSurfacePoint-b+2);
-            std::cout << a << " " << b << " : " << ntmp << " : " << tmr.elapsed()/ntmp << std::endl;
         }
     }
 }
