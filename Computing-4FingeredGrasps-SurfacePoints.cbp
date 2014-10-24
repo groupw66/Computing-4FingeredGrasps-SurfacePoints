@@ -64,6 +64,7 @@
 		<Unit filename="include/SamplingPoints.h" />
 		<Unit filename="include/SurfacePoint.cpp" />
 		<Unit filename="include/SurfacePoint.h" />
+		<Unit filename="include/Timer.h" />
 		<Unit filename="include/Wrench.cpp" />
 		<Unit filename="include/Wrench.h" />
 		<Unit filename="main.cpp" />
