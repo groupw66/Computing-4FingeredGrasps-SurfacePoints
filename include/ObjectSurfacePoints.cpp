@@ -52,4 +52,5 @@ void ObjectSurfacePoints::computeCM()
         maxAABB.z() = std::max(maxAABB.z(), sp.position.z());
     }
     cm /= surfacePoints.size();
+    cm = Eigen::Vector3d(0,0,0);
 }
