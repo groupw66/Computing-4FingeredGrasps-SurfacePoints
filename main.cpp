@@ -78,13 +78,15 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
 
     // Compute4FingeredGrasps
     printf("%s | Compute4FingeredGrasps start\n", outFilename.c_str());
+    ofs.open(outFilename + ".sols", std::ofstream::ate);
+    ofs << sampledPoints.size() << "\n";
     std::set<Grasp> solSet;
     std::vector<int> sizeSols;
     std::vector<std::vector<Grasp> > sols;
     sols.resize(sampledPoints.size());
-    //sizeSols = Compute4FingeredGrasps::compute4FingeredGrasps(solSet, osp.surfacePoints, sampledPoints, halfAngle);
-    //#pragma omp parallel for schedule(static, 1)
+
     tmr.reset();
+    //#pragma omp parallel for schedule(static, 1)
     for(unsigned int i=0 ; i<sampledPoints.size() ; ++i){
         tmr2.reset();
         std::vector<unsigned int> filteredPointIds;
@@ -99,7 +101,7 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         findEquilibriumRuntimes += tmr2.elapsed();
         //#pragma omp critical
         {
-            //solSet.insert(fcGrasps.begin(),fcGrasps.end());
+            /*
             for(Grasp g : fcGrasps){
                 if(solSet.insert(g).second){
                     //sols[i].push_back(g);
@@ -107,10 +109,20 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
             }
             sols[i].insert(sols[i].end(), fcGrasps.begin(), fcGrasps.end());
             sizeSols.push_back(solSet.size());
+            */
+            ofs << fcGrasps.size() << "\n";
+            for(Grasp g : fcGrasps){
+                for(unsigned int id : g.surfacePoints){
+                    ofs << id << " ";
+                }
+                ofs << "\n";
+            }
+
         }
         eachSampleRuntimes.push_back(tmr.elapsed());
     }
     printf("%s | Compute4FingeredGrasps ok\n", outFilename.c_str());
+    ofs.close();
 
     ofs.open(outFilename + ".runtime", std::ofstream::ate);
     ofs << "sampleRuntime: " << sampleRuntime << "\n";
@@ -121,7 +133,7 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         ofs << eachSampleRuntime << "\n";
     }
     ofs.close();
-
+    /*
     ofs.open(outFilename + ".sizeSols", std::ofstream::ate);
     ofs << sizeSols.size() << "\n";
     for(int sizeSol : sizeSols){
@@ -141,6 +153,7 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         }
     }
     ofs.close();
+    */
     printf("%s | Write output ok\n", outFilename.c_str());
     printf("---------------------------------------\n");
 }
