@@ -64,6 +64,10 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
         sampledPoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint, osp.minAABB, osp.maxAABB);
     }
+    else if(randomMode == "step"){
+        Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
+        sampledPoints = SamplingPoints::uniform(osp.minAABB, osp.maxAABB, nSamplePoint);
+    }
     sampleRuntime = tmr.elapsed();
     ofs.open(outFilename + ".sampledPoints", std::ofstream::ate);
     ofs << sampledPoints.size() << "\n";
@@ -253,7 +257,7 @@ int main(int argc,char *argv[])
         std::string mode;
         if(argc >= 2){
             mode = argv[1];
-            if(mode == "uniform" || mode == "normalDist" || mode == "normalDistLimit"){
+            if(mode == "uniform" || mode == "normalDist" || mode == "normalDistLimit" || mode == "step"){
                 std::string objFilename;
                 std::string outFilename;
                 int nSamplePoint = 10000;
