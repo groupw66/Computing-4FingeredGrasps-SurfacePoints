@@ -65,14 +65,12 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         sampledPoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint, osp.minAABB, osp.maxAABB);
     }
     sampleRuntime = tmr.elapsed();
-    /*
     ofs.open(outFilename + ".sampledPoints", std::ofstream::ate);
     ofs << sampledPoints.size() << "\n";
     for(Eigen::Vector3d sp : sampledPoints){
         ofs << sp.x() << " " << sp.y() << " " << sp.z() << "\n";
     }
     ofs.close();
-    */
 
     // Compute4FingeredGrasps
     printf("%s | Compute4FingeredGrasps start\n", outFilename.c_str());
