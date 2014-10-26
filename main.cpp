@@ -2,6 +2,7 @@
 #include <fstream>
 #include <UnitTest++.h>
 #include <cstring>
+#include <map>
 #include "SamplingPoints.h"
 #include "Compute4FingeredGrasps.h"
 #include "OBJFile.h"
@@ -303,6 +304,61 @@ void allFC_allFCSorted(std::string allFCFilename, std::string outFilename)
     allFCFile.close();
 }
 
+
+void sols_solsMindist(std::string allFCFilename, std::string solsFilename, std::string outFilename)
+{
+    std::ifstream allFCFile(allFCFilename.c_str());
+    if(!allFCFile.is_open()){
+        std::cout << "! Can't open " << allFCFilename << std::endl;
+        return;
+    }
+    std::ifstream solsFile(solsFilename.c_str());
+    if(!solsFile.is_open()){
+        std::cout << "! Can't open " << solsFilename << std::endl;
+        return;
+    }
+    std::ofstream outFile(outFilename.c_str());
+    if(!outFile.is_open()){
+        std::cout << "! Can't open " << outFilename << std::endl;
+        return;
+    }
+    std::map<Grasp, double> allFCmap;
+    std::string line;
+    while (std::getline(allFCFile, line))
+    {
+        std::istringstream iss(line);
+        int a, b, c, d;
+        double mindist;
+        if (!(iss >> a >> b >> c >> d >> mindist)) { //error
+            std::cout << "!(iss >> a >> b >> c >> d >> mindist) : " << allFCmap.size()+1 << std::endl;
+            break;
+        }
+        allFCmap.insert(allFCmap.end(),std::make_pair(Grasp(a, b, c, d), mindist));
+    }
+    int n;
+    solsFile >> n;
+    outFile << n << "\n";
+    for(int i=0 ; i<n; ++i){
+        int nSol;
+        solsFile >> nSol;
+        outFile << nSol << "\n";
+        for(int j=0 ; j<nSol ; ++j){
+            int a, b, c, d;
+            solsFile >> a >> b >> c >> d;
+            auto it = allFCmap.find(Grasp(a, b, c, d));
+            if(it != allFCmap.end()){
+                outFile << a << " " << b << " " << c << " " << d << " " << it->second << "\n";
+            }
+            else{
+                std::cout << "Grasp " << a << " " << b << " " << c << " " << d << "not found!" << std::endl;
+            }
+        }
+    }
+    allFCFile.close();
+    solsFile.close();
+    outFile.close();
+}
+
 int main(int argc,char *argv[])
 {
     if(argc > 1){
@@ -351,6 +407,12 @@ int main(int argc,char *argv[])
             else if(mode == "allFC_allFCSorted"){
                 allFC_allFCSorted(argv[2], //allFCFilename
                                   argv[3] //outFilename
+                                  );
+            }
+            else if(mode == "sols_solsMindist"){
+                sols_solsMindist(argv[2], //allFCFilename
+                                  argv[3], //solsFilename
+                                  argv[4] //outFilename
                                   );
             }
             else{
