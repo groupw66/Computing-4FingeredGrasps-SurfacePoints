@@ -331,6 +331,57 @@ void sols_solsMindist(std::string allFCFilename, std::string solsFilename, std::
     outFile.close();
 }
 
+void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string outFilename)
+{
+    std::ifstream solsMindistFile(solsMindistFilename.c_str());
+    if(!solsMindistFile.is_open()){
+        std::cout << "! Can't open " << solsMindistFilename << std::endl;
+        return;
+    }
+    std::ofstream outFile(outFilename.c_str());
+    outFile.unsetf ( std::ios::floatfield );
+    outFile.precision(std::numeric_limits<long double>::digits10);
+    if(!outFile.is_open()){
+        std::cout << "! Can't open " << outFilename << std::endl;
+        return;
+    }
+    std::ofstream outSizeFile((outFilename+"Size").c_str());
+    outSizeFile.unsetf ( std::ios::floatfield );
+    outSizeFile.precision(std::numeric_limits<long double>::digits10);
+    if(!outSizeFile.is_open()){
+        std::cout << "! Can't open " << (outFilename+"Size") << std::endl;
+        return;
+    }
+    std::set<Grasp> solsSet;
+    int n;
+    solsMindistFile >> n;
+    outFile << n << "\n";
+    outSizeFile << n << "\n";
+    for(int i=0 ; i<n; ++i){
+        int nSol;
+        solsMindistFile >> nSol;
+        std::vector<pair<double, Grasp> > tmpSols;
+        for(int j=0 ; j<nSol ; ++j){
+            int a, b, c, d;
+            double mindist;
+            solsMindistFile >> a >> b >> c >> d >> mindist;
+            if(solsSet.insert(Grasp(a,b,c,d)).second){
+                tmpSols.push_back(std::make_pair(mindist, Grasp(a,b,c,d)));
+            }
+        }
+        std::sort(tmpSols.begin(), tmpSols.end(), std::greater<pair<double, Grasp> >());
+        outFile << tmpSols.size() << "\n";
+        for(auto pdg : tmpSols){
+            outFile << pdg.second[0] << " " << pdg.second[1] << " " << pdg.second[2] << " " << pdg.second[3] << " " << pdg.first << "\n";
+        }
+        outSizeFile << solsSet.size() << "\n";
+    }
+
+    solsMindistFile.close();
+    outFile.close();
+    outSizeFile.close();
+}
+
 int main(int argc,char *argv[])
 {
     if(argc > 1){
@@ -386,6 +437,11 @@ int main(int argc,char *argv[])
                                   argv[3], //solsFilename
                                   argv[4] //outFilename
                                   );
+            }
+            else if(mode == "solsMindist_solsMindistSet"){
+                solsMindist_solsMindistSet(argv[2], //solsMindistFilename
+                                            argv[3] //outFilename
+                                            );
             }
             else{
                 std::cout << "Unknown command..." << std::endl;
