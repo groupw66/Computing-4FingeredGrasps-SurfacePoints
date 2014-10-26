@@ -264,6 +264,45 @@ void allFC(std::string surfacePointFilename, std::string outFilename, double hal
     }
 }
 
+void allFC_allFCSorted(std::string allFCFilename, std::string outFilename)
+{
+    std::ifstream allFCFile(allFCFilename.c_str());
+    if(!allFCFile.is_open()){
+        std::cout << "! Can't open " << allFCFilename << std::endl;
+        return;
+    }
+    std::ofstream outFile(outFilename.c_str());
+    outFile.unsetf ( std::ios::floatfield );
+    outFile.precision(std::numeric_limits<long double>::digits10);
+    if(!outFile.is_open()){
+        std::cout << "! Can't open " << outFilename << std::endl;
+        return;
+    }
+    std::vector<pair<double, Grasp> > allFCs;
+    std::string line;
+    while (std::getline(allFCFile, line))
+    {
+        std::istringstream iss(line);
+        int a, b, c, d;
+        double mindist;
+        if (!(iss >> a >> b >> c >> d >> mindist)) { //error
+            std::cout << "!(iss >> a >> b >> c >> d >> mindist) : " << allFCs.size()+1 << std::endl;
+            break;
+        }
+        allFCs.push_back(std::make_pair(mindist, Grasp(a, b, c, d)));
+    }
+    std::sort(allFCs.begin(), allFCs.end(), std::greater<pair<double, Grasp> >());
+    for(unsigned int i=0 ; i<allFCs.size() ; ++i){
+        outFile << allFCs[i].second[0] << " " <<
+                    allFCs[i].second[1] << " " <<
+                    allFCs[i].second[2] << " " <<
+                    allFCs[i].second[3] << " " <<
+                    allFCs[i].first << "\n" ;
+    }
+    outFile.close();
+    allFCFile.close();
+}
+
 int main(int argc,char *argv[])
 {
     if(argc > 1){
@@ -292,13 +331,27 @@ int main(int argc,char *argv[])
                 runCompute4FingeredGrasps(mode, objFilename, outFilename, nSamplePoint, halfAngle);
             }
             else if(mode == "cvtOBJtoSurfacePoints"){
-                cvtOBJtoSurfacePoints(argv[2], argv[3]);
+                cvtOBJtoSurfacePoints(argv[2], //objFilename
+                                      argv[3] //outFilenmae
+                                      );
             }
             else if(mode == "mindist"){
-                computeMindist(argv[2], argv[3], argv[4], atof(argv[5]));
+                computeMindist(argv[2], //surfacePointsFilename
+                               argv[3], //solsFilename
+                               argv[4], //outFilename
+                               atof(argv[5]) //halfAngle(degree)
+                               );
             }
             else if(mode == "allFC"){
-                allFC(argv[2], argv[3], atof(argv[4]));
+                allFC(argv[2], //surfacePointsFilename
+                      argv[3], //outFilename
+                      atof(argv[4]) //halfAngle(degree)
+                      );
+            }
+            else if(mode == "allFC_allFCSorted"){
+                allFC_allFCSorted(argv[2], //allFCFilename
+                                  argv[3] //outFilename
+                                  );
             }
             else{
                 std::cout << "Unknown command..." << std::endl;
