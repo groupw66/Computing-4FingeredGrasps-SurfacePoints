@@ -16,12 +16,18 @@ using namespace std;
 
 void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, std::string outFilename, int nSamplePoint, double halfAngle)
 {
-    std::ifstream objFile(objFilename.c_str());
-    if(!objFile.is_open()){
-        std::cout << "!" << objFilename << std::endl;
+    std::ifstream testFile(objFilename.c_str());
+    if(!testFile.is_open()){
+        std::cout << "! Can't open " << objFilename << std::endl;
         return;
     }
-    objFile.close();
+    testFile.close();
+    std::ofstream testoFile((outFilename+".sols").c_str());
+    if(!testoFile.is_open()){
+        std::cout << "! Can't open " << (outFilename+".sols") << std::endl;
+        return;
+    }
+    testoFile.close();
     std::cout << outFilename << std::endl;
 
     // runtime
@@ -48,7 +54,7 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         osp.open(obj);
     }
     else {
-        std::cout << "Not supported file..." << std::endl;
+        std::cout << "Not support object file : " << objFilename << std::endl;
     }
 
     // SamplingPoints
@@ -66,7 +72,6 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         sampledPoints = SamplingPoints::randomNormalDist(osp.cm, diffAABB/6., nSamplePoint, osp.minAABB, osp.maxAABB);
     }
     else if(randomMode == "step"){
-        Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
         sampledPoints = SamplingPoints::uniform(osp.minAABB, osp.maxAABB, nSamplePoint);
     }
     sampleRuntime = tmr.elapsed();
@@ -81,13 +86,8 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
     printf("%s | Compute4FingeredGrasps start\n", outFilename.c_str());
     ofs.open(outFilename + ".sols", std::ofstream::ate);
     ofs << sampledPoints.size() << "\n";
-    std::set<Grasp> solSet;
-    std::vector<int> sizeSols;
-    std::vector<std::vector<Grasp> > sols;
-    sols.resize(sampledPoints.size());
 
     tmr.reset();
-    //#pragma omp parallel for schedule(static, 1)
     for(unsigned int i=0 ; i<sampledPoints.size() ; ++i){
         tmr2.reset();
         std::vector<unsigned int> filteredPointIds;
@@ -100,25 +100,12 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
             Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(fcGrasps, filteredPointIds, sampledPoints[i], osp.surfacePoints);
         }
         findEquilibriumRuntimes += tmr2.elapsed();
-        //#pragma omp critical
-        {
-            /*
-            for(Grasp g : fcGrasps){
-                if(solSet.insert(g).second){
-                    //sols[i].push_back(g);
-                }
+        ofs << fcGrasps.size() << "\n";
+        for(Grasp g : fcGrasps){
+            for(unsigned int id : g.surfacePoints){
+                ofs << id << " ";
             }
-            sols[i].insert(sols[i].end(), fcGrasps.begin(), fcGrasps.end());
-            sizeSols.push_back(solSet.size());
-            */
-            ofs << fcGrasps.size() << "\n";
-            for(Grasp g : fcGrasps){
-                for(unsigned int id : g.surfacePoints){
-                    ofs << id << " ";
-                }
-                ofs << "\n";
-            }
-
+            ofs << "\n";
         }
         eachSampleRuntimes.push_back(tmr.elapsed());
     }
@@ -134,27 +121,6 @@ void runCompute4FingeredGrasps(std::string randomMode, std::string objFilename, 
         ofs << eachSampleRuntime << "\n";
     }
     ofs.close();
-    /*
-    ofs.open(outFilename + ".sizeSols", std::ofstream::ate);
-    ofs << sizeSols.size() << "\n";
-    for(int sizeSol : sizeSols){
-        ofs << sizeSol << "\n";
-    }
-    ofs.close();
-
-    ofs.open(outFilename + ".sols", std::ofstream::ate);
-    ofs << sols.size() << "\n";
-    for(std::vector<Grasp> sol : sols){
-        ofs << sol.size() << "\n";
-        for(Grasp g : sol){
-            for(unsigned int id : g.surfacePoints){
-                ofs << id << " ";
-            }
-            ofs << "\n";
-        }
-    }
-    ofs.close();
-    */
     printf("%s | Write output ok\n", outFilename.c_str());
     printf("---------------------------------------\n");
 }
@@ -163,10 +129,16 @@ void cvtOBJtoSurfacePoints(std::string objFilename, std::string outFilename)
 {
     std::ifstream objFile(objFilename.c_str());
     if(!objFile.is_open()){
-        std::cout << "!" << objFilename << std::endl;
+        std::cout << "! Can't open " << objFilename << std::endl;
         return;
     }
     objFile.close();
+    std::ofstream outFile(outFilename.c_str());
+    if(!outFile.is_open()){
+        std::cout << "! Can't open " << outFilename << std::endl;
+        return;
+    }
+    outFile.close();
     OBJFile obj(objFilename.c_str());
     ObjectSurfacePoints osp(obj);
     std::vector<Eigen::Vector3d> positions;
@@ -184,7 +156,7 @@ void computeMindist(std::string surfacePointFilename, std::string solFilename, s
 {
     std::ifstream objFile(surfacePointFilename.c_str());
     if(!objFile.is_open()){
-        std::cout << "!" << surfacePointFilename << std::endl;
+        std::cout << "! Can't open " << surfacePointFilename << std::endl;
         return;
     }
     objFile.close();
@@ -195,11 +167,11 @@ void computeMindist(std::string surfacePointFilename, std::string solFilename, s
     outFile.unsetf ( std::ios::floatfield );
     outFile.precision(std::numeric_limits<long double>::digits10);
     if(!solFile.is_open()){
-        std::cout << "!" << solFilename << std::endl;
+        std::cout << "! Can't open " << solFilename << std::endl;
         return;
     }
     if(!outFile.is_open()){
-        std::cout << "!" << outFilename << std::endl;
+        std::cout << "! Can't open " << outFilename << std::endl;
         return;
     }
     int n;
@@ -216,14 +188,12 @@ void computeMindist(std::string surfacePointFilename, std::string solFilename, s
             solFile >> a >> b >> c >> d;
             double mindist = ForceClosure::getMindist_Qhull(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d], osp.cm);
             outFile << mindist << "\n";
-            //std::cout << mindist << std::endl;
         }
         if(nSol>0)
             std::cout << nSol << " : " << tmr.elapsed()/nSol << std::endl;
     }
     solFile.close();
     outFile.close();
-
 }
 
 void allFC(std::string surfacePointFilename, std::string outFilename, double halfAngle = 10.d)
@@ -231,19 +201,19 @@ void allFC(std::string surfacePointFilename, std::string outFilename, double hal
     Timer tmr;
     std::ifstream objFile(surfacePointFilename.c_str());
     if(!objFile.is_open()){
-        std::cout << "!" << surfacePointFilename << std::endl;
+        std::cout << "! Can't open " << surfacePointFilename << std::endl;
         return;
     }
     objFile.close();
-    PositionsNormalsFile obj(surfacePointFilename.c_str());
-    ObjectSurfacePoints osp(obj);
     std::ofstream outFile(outFilename);
     outFile.unsetf ( std::ios::floatfield );
     outFile.precision(std::numeric_limits<long double>::digits10);
     if(!outFile.is_open()){
-        std::cout << "!" << outFilename << std::endl;
+        std::cout << "! Can't open " << outFilename << std::endl;
         return;
     }
+    PositionsNormalsFile obj(surfacePointFilename.c_str());
+    ObjectSurfacePoints osp(obj);
     DaeHeuristicChecker daeHeuristicChecker(halfAngle * M_PI / 180.d);
     unsigned int nSurfacePoint = osp.surfacePoints.size();
     for(unsigned int a=0 ; a<nSurfacePoint ; ++a){
@@ -251,7 +221,6 @@ void allFC(std::string surfacePointFilename, std::string outFilename, double hal
         for(unsigned int b=a+1 ; b<nSurfacePoint ; ++b){
             for(unsigned int c=b+1 ; c<nSurfacePoint ; ++c){
                 for(unsigned int d=c+1 ; d<nSurfacePoint ; ++d){
-                    //std::cout << a << " " << b << " " << c << " " << d << std::endl;
                     bool passFilter = daeHeuristicChecker.isForceClosure(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d]);
                     if(passFilter){
                         double mindist = ForceClosure::getMindist_Qhull(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d], osp.cm);
@@ -263,6 +232,7 @@ void allFC(std::string surfacePointFilename, std::string outFilename, double hal
             }
         }
     }
+    outFile.close();
 }
 
 void allFC_allFCSorted(std::string allFCFilename, std::string outFilename)
@@ -318,6 +288,8 @@ void sols_solsMindist(std::string allFCFilename, std::string solsFilename, std::
         return;
     }
     std::ofstream outFile(outFilename.c_str());
+    outFile.unsetf ( std::ios::floatfield );
+    outFile.precision(std::numeric_limits<long double>::digits10);
     if(!outFile.is_open()){
         std::cout << "! Can't open " << outFilename << std::endl;
         return;
