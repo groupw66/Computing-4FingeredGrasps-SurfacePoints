@@ -329,6 +329,7 @@ void sols_solsMindist(std::string allFCFilename, std::string solsFilename, std::
     allFCFile.close();
     solsFile.close();
     outFile.close();
+    std::remove(solsFilename.c_str());
 }
 
 void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string outFilename, double minMindist)
