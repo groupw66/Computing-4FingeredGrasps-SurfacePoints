@@ -331,7 +331,7 @@ void sols_solsMindist(std::string allFCFilename, std::string solsFilename, std::
     outFile.close();
 }
 
-void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string outFilename)
+void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string outFilename, double minMindist)
 {
     std::ifstream solsMindistFile(solsMindistFilename.c_str());
     if(!solsMindistFile.is_open()){
@@ -365,6 +365,8 @@ void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string out
             int a, b, c, d;
             double mindist;
             solsMindistFile >> a >> b >> c >> d >> mindist;
+            if(mindist < minMindist)
+                continue;
             if(solsSet.insert(Grasp(a,b,c,d)).second){
                 tmpSols.push_back(std::make_pair(mindist, Grasp(a,b,c,d)));
             }
@@ -439,8 +441,12 @@ int main(int argc,char *argv[])
                                   );
             }
             else if(mode == "solsMindist_solsMindistSet"){
+                double minMindist = std::numeric_limits<double>::min();
+                if(argc > 5)
+                    minMindist = atof(argv[4]);
                 solsMindist_solsMindistSet(argv[2], //solsMindistFilename
-                                            argv[3] //outFilename
+                                            argv[3], //outFilename
+                                            minMindist
                                             );
             }
             else{
