@@ -144,42 +144,59 @@ inline std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(cons
 		bool not_found=true;
 		// initialize subA
 		subA.resize(6, l-1);
-		int atSubA=0, atANeg=0;
-		num_neg=l-1;
-		Eigen::MatrixXd ANeg(6,num_neg);
+		subA.col(0)=A.col(l-1);
+		int num_pos=l-1-num_neg;
+//		Eigen::MatrixXd ANeg(6,num_neg);
+		std::vector<Eigen::Matrix<double,6,1> > ANeg,APos;
+		ANeg.reserve(num_neg);
+		APos.reserve(num_pos);
 		for(int i=0;i<l-1;++i){
-			if (true || c(i)<0){
-				ANeg.col(atANeg++)=A.col(i);
-			}
-			else{
-				subA.col(atSubA++)=A.col(i);
-			}
+			(c(i)<0)?
+				ANeg.push_back(A.col(i))
+			:
+				APos.push_back(A.col(i));
 		}
-		subA.col(atSubA++)=A.col(l-1);
-		std::vector<bool> indices(num_neg,true);
-		int l_=0;
+		int l_=1; // number of removed element
+		std::vector<bool> negIndices(num_neg), posIndices(num_pos);
 		do {
-			indices[l_++]=false;
 			subA.conservativeResize(6, l-l_);
+			int nNeg=std::min(l_,num_neg), nPos=l_-nNeg;
+			std::fill_n(negIndices.begin(),nNeg,false);
+			std::fill(negIndices.begin()+nNeg,negIndices.end(),true);
+			std::fill_n(posIndices.begin(),nPos,false);
+			std::fill(posIndices.begin()+nPos,posIndices.end(),true);
 			do{
-				// calculate next subA
-				int iSubA=atSubA;
-				for(int i=0;i<num_neg;++i){
-					if (indices[i]) {
-						subA.col(iSubA++)=ANeg.col(i);
-					}
-				}
-//				c = (subA.transpose()*subA).inverse()*subA.transpose()*b;
-				c = subA.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
-				if (c.minCoeff() > 0) {
-					r = b - subA*c;
-					if ((r.transpose()*A).maxCoeff() < Tol) {
-						not_found = false;
-						break;
-					}
-				}
-			} while (std::next_permutation(indices.begin(), indices.end()));
-		}while (not_found);
+				do{
+					do{
+						// calculate next subA
+						int iSubA=1;
+						for(int i=0;i<num_neg;++i){
+							if (negIndices[i]) {
+								subA.col(iSubA++)=ANeg[i];
+							}
+						}
+						for(int i=0;i<num_pos;++i){
+							if (posIndices[i]) {
+								subA.col(iSubA++)=APos[i];
+							}
+						}
+		//				c = (subA.transpose()*subA).inverse()*subA.transpose()*b;
+						c = subA.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+						if (c.minCoeff() > 0) {
+							r = b - subA*c;
+							if ((r.transpose()*A).maxCoeff() < Tol) {
+								not_found = false;
+								break;
+							}
+						}
+					} while(std::next_permutation(posIndices.begin(), posIndices.end()));
+				} while(not_found && std::next_permutation(negIndices.begin(), negIndices.end()));
+
+				negIndices[--nNeg]=true;
+				posIndices[nPos++]=false;
+			} while(not_found && nNeg>0 && nPos<=num_pos);
+			++l_;
+		} while (not_found);
 	}
 	else{
 		subA = A;
@@ -189,7 +206,7 @@ inline std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(cons
 	//	If any component of 'c' is zero, then the corresponding element in
 	//	'subA' can be removed.
 	for (int i=0; i<subA.cols(); ) {
-		if (c(i)<=0) { // rarely happened
+		if (c(i)<Tol) { // rarely happened
 			// remove column #i
 			subA.block(0, i, 6, subA.cols()-i-1) = subA.rightCols(subA.cols()-i-1);
 			subA.conservativeResize(Eigen::NoChange, subA.cols()-1);
@@ -232,7 +249,7 @@ inline std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorith
 			Eigen::VectorXd p = A*c;
 			r = b-p;
 			d = r.norm();
-			if (d<1e-8 || l==6) {
+			if (d<Tol || l==6) {
 				break;
 			}
 		}
@@ -299,7 +316,7 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 	// force-closure test using the ZC distance algorithm (IEEE T-RO'09)
 	Eigen::Matrix<double,6,1> wc = -(Gi[0].col(0)+Gi[1].col(0)+Gi[2].col(0)+Gi[3].col(0))/4., r;
 	double Tol=1e-7, epsilon=1e-6, d;
-	if (wc.norm() < 1e-10){
+	if (wc.norm() < Tol){
 		wc << 1,1,1,1,1,1;
 	}
 	Eigen::MatrixXd A;
@@ -357,7 +374,7 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 		primW.push_back(Spoint);
 		std::vector<int> ids_facets_update;
 		for (int k=0;k<norm_facets.size();++k) {
-			if (Spoint.dot(norm_facets[k])-1 > 1e-10){
+			if (Spoint.dot(norm_facets[k])-1 > Tol){
 				ids_facets_update.push_back(k);
 			}
 		}
