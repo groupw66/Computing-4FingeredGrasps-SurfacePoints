@@ -41,7 +41,7 @@
 		</Compiler>
 		<Linker>
 			<Add option="-lqhullcpp" />
-			<Add option="-lqhull" />
+			<Add option="-lqhullstatic_p" />
 			<Add option="-lgomp" />
 			<Add option="-lUnitTest++" />
 		</Linker>
