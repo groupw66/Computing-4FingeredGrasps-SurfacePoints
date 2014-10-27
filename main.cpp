@@ -332,7 +332,7 @@ void sols_solsMindist(std::string allFCFilename, std::string solsFilename, std::
     std::remove(solsFilename.c_str());
 }
 
-void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string outFilename, double minMindist)
+void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string outFilename, double minMindist=0.d)
 {
     std::ifstream solsMindistFile(solsMindistFilename.c_str());
     if(!solsMindistFile.is_open()){
@@ -346,11 +346,11 @@ void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string out
         std::cout << "! Can't open " << outFilename << std::endl;
         return;
     }
-    std::ofstream outSizeFile((outFilename+"Size").c_str());
+    std::ofstream outSizeFile((outFilename+".size").c_str());
     outSizeFile.unsetf ( std::ios::floatfield );
     outSizeFile.precision(std::numeric_limits<long double>::digits10);
     if(!outSizeFile.is_open()){
-        std::cout << "! Can't open " << (outFilename+"Size") << std::endl;
+        std::cout << "! Can't open " << (outFilename+".size") << std::endl;
         return;
     }
     std::set<Grasp> solsSet;
@@ -383,6 +383,32 @@ void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string out
     solsMindistFile.close();
     outFile.close();
     outSizeFile.close();
+}
+
+void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string outFilename,
+                                std::string allFCSortedFilename, double percen=100.d)
+{
+    std::ifstream allFCSortedFile(allFCSortedFilename.c_str());
+    if(!allFCSortedFile.is_open()){
+        std::cout << "! Can't open " << allFCSortedFilename << std::endl;
+        return;
+    }
+    std::vector<std::pair<Grasp, double> > allFCSorteds;
+    std::string line;
+    while (std::getline(allFCSortedFile, line))
+    {
+        std::istringstream iss(line);
+        int a, b, c, d;
+        double mindist;
+        if (!(iss >> a >> b >> c >> d >> mindist)) { //error
+            std::cout << "!(iss >> a >> b >> c >> d >> mindist) : " << allFCSorteds.size()+1 << std::endl;
+            break;
+        }
+        allFCSorteds.push_back(std::make_pair(Grasp(a, b, c, d), mindist));
+    }
+    allFCSortedFile.close();
+    int idPercen = allFCSorteds.size()*(percen/100.d) - 1;
+    solsMindist_solsMindistSet(solsMindistFilename,outFilename,allFCSorteds[idPercen].second);
 }
 
 int main(int argc,char *argv[])
@@ -442,13 +468,18 @@ int main(int argc,char *argv[])
                                   );
             }
             else if(mode == "solsMindist_solsMindistSet"){
-                double minMindist = std::numeric_limits<double>::min();
-                if(argc > 5)
-                    minMindist = atof(argv[4]);
-                solsMindist_solsMindistSet(argv[2], //solsMindistFilename
-                                            argv[3], //outFilename
-                                            minMindist
-                                            );
+                if(argc > 5){
+                    solsMindist_solsMindistSet(argv[2], //solsMindistFilename
+                                                argv[3], //outFilename
+                                                argv[4], //allFCSortedFilename
+                                                atof(argv[5]) //percen
+                                                );
+                }
+                else{
+                    solsMindist_solsMindistSet(argv[2], //solsMindistFilename
+                                                argv[3] //outFilename
+                                                );
+                }
             }
             else{
                 std::cout << "Unknown command..." << std::endl;
