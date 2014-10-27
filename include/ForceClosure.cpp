@@ -37,7 +37,7 @@ double ForceClosure::getMindist_Qhull(std::vector<Wrench> wrenchs)
 }
 
 
-Eigen::Vector3d perpendicular_vector(const Eigen::Vector3d &normal)
+inline Eigen::Vector3d perpendicular_vector(const Eigen::Vector3d &normal)
 {
 	// find perpendicular vector
 	Eigen::Vector3d perpendicular;
@@ -54,7 +54,7 @@ Eigen::Vector3d perpendicular_vector(const Eigen::Vector3d &normal)
 	return perpendicular;
 }
 
-std::pair<double, Eigen::Matrix<double,6,1> > SuppFunL1(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
+inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFunL1(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
 {
 	Eigen::Matrix<double,6,1> Spoint;
 	double Svalue = std::numeric_limits<double>::min();
@@ -63,26 +63,39 @@ std::pair<double, Eigen::Matrix<double,6,1> > SuppFunL1(const Eigen::Matrix<doub
 		double hui=hypot(di(1), di(2)), hw=uFriction*hui + di(0);
 		if (Svalue<hw) {
 			Svalue=hw;
-			if (hui>0) {
-				double temp=uFriction/hui;
-				Eigen::Vector3d tmp;
-				tmp << 1., temp*di(1), temp*di(2);
-				Spoint=G*tmp;
-			}
-			else{
-				Spoint=G.col(0);
-			}
+			double temp=hui>0?uFriction/hui:0.;
+			Eigen::Vector3d tmp;
+			tmp << 1., temp*di(1), temp*di(2);
+			Spoint=G*tmp;
 		}
 	}
 	return std::pair<double, Eigen::Matrix<double,6,1> >(Svalue, Spoint);
 }
 
-std::pair<double, Eigen::Matrix<double,6,1> > SuppFun(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
+inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFunLinf(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
+{
+	Eigen::Matrix<double,6,1> Spoint;
+	double Svalue = std::numeric_limits<double>::min();
+	for (const Eigen::Matrix<double,6,3> &G : Gi) {
+		Eigen::Vector3d di=G.transpose()*u;
+		double hui=hypot(di(1), di(2)), hw=uFriction*hui + di(0);
+		if (hw>0) {
+			Svalue+=hw;
+			double temp=hui>0?uFriction/hui:0.;
+			Eigen::Vector3d tmp;
+			tmp << 1., temp*di(1), temp*di(2);
+			Spoint+=G*tmp;
+		}
+	}
+	return std::pair<double, Eigen::Matrix<double,6,1> >(Svalue, Spoint);
+}
+
+inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFun(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
 {
 	return SuppFunL1(u, Gi, uFriction);
 }
 
-std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(const Eigen::Matrix<double,6,1> &b, Eigen::MatrixXd A, Eigen::VectorXd c, double Tol)
+inline std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(const Eigen::Matrix<double,6,1> &b, Eigen::MatrixXd A, Eigen::VectorXd c, double Tol)
 {
 	//	This subalgorithm is to find the minimal subset of 'A' such that the
 	//	point on the convex cone of 'A' closest to 'b' can be written as a
@@ -187,7 +200,7 @@ std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(const Eigen
 	return std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd>(r, subA);
 }
 
-std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorithm(const Eigen::Matrix<double,6,1> &b, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction, double Tol)
+inline std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorithm(const Eigen::Matrix<double,6,1> &b, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction, double Tol)
 {
 	// This algorithm computes the minimum distance between a convex cone and a point 'b' (IEEE T-RO'09)
 	//	'd' --- the minimum distance
@@ -232,7 +245,7 @@ std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorithm(const
 	return std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd>(d, r, A);
 }
 
-std::vector<Eigen::Matrix<double,6,3> > getG(SurfacePoint &sp1, SurfacePoint &sp2, SurfacePoint &sp3, SurfacePoint &sp4, const Eigen::Vector3d &cm){
+inline std::vector<Eigen::Matrix<double,6,3> > getG(SurfacePoint &sp1, SurfacePoint &sp2, SurfacePoint &sp3, SurfacePoint &sp4, const Eigen::Vector3d &cm){
 	// calculate Grasp Matrix
 	sp1.position-=cm;
 	sp2.position-=cm;
