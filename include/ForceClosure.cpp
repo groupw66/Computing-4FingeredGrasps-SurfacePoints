@@ -310,6 +310,22 @@ inline std::vector<Eigen::Matrix<double,6,3> > getG(SurfacePoint &sp1, SurfacePo
 	return Gi;
 }
 
+bool ForceClosure::isFC_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4, Eigen::Vector3d cm, double halfAngle)
+{
+	std::vector<Eigen::Matrix<double,6,3> > Gi=getG(sp1,sp2,sp3,sp4,cm);
+	// force-closure test using the ZC distance algorithm (IEEE T-RO'09)
+	Eigen::Matrix<double,6,1> wc = -(Gi[0].col(0)+Gi[1].col(0)+Gi[2].col(0)+Gi[3].col(0))/4.;
+	double Tol=1e-7, d;
+	if (wc.norm() < Tol){
+		wc << 1,1,1,1,1,1;
+	}
+	double uFriction=std::tan(halfAngle*M_PI/180.);
+//	uFriction=0.17632698070846497540031805328908376395702362060546875;
+	std::tie(d, std::ignore, std::ignore) = ZCAlgorithm(wc, Gi, uFriction, Tol);
+	return d<Tol;
+
+}
+
 double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4, Eigen::Vector3d cm, double halfAngle)
 {
 	std::vector<Eigen::Matrix<double,6,3> > Gi=getG(sp1,sp2,sp3,sp4,cm);
@@ -319,9 +335,9 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 	if (wc.norm() < Tol){
 		wc << 1,1,1,1,1,1;
 	}
-	Eigen::MatrixXd A;
 	double uFriction=std::tan(halfAngle*M_PI/180.);
 //	uFriction=0.17632698070846497540031805328908376395702362060546875;
+	Eigen::MatrixXd A;
 	std::tie(d, r, A) = ZCAlgorithm(wc, Gi, uFriction, Tol);
 	if (d > Tol){
 		// the grasp does not have force closure
