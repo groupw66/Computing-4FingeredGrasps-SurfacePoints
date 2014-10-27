@@ -322,6 +322,7 @@ void sols_solsMindist(std::string allFCFilename, std::string solsFilename, std::
                 outFile << a << " " << b << " " << c << " " << d << " " << it->second << "\n";
             }
             else{
+                outFile << a << " " << b << " " << c << " " << d << " " << 0 << "\n";
                 std::cout << "Grasp " << a << " " << b << " " << c << " " << d << "not found!" << std::endl;
             }
         }
