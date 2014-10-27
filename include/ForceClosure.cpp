@@ -331,7 +331,7 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 	std::vector<Eigen::Matrix<double,6,3> > Gi=getG(sp1,sp2,sp3,sp4,cm);
 	// force-closure test using the ZC distance algorithm (IEEE T-RO'09)
 	Eigen::Matrix<double,6,1> wc = -(Gi[0].col(0)+Gi[1].col(0)+Gi[2].col(0)+Gi[3].col(0))/4., r;
-	double Tol=1e-7, epsilon=1e-6, d;
+	double Tol=1e-7, epsilon=1e-5, d;
 	if (wc.norm() < Tol){
 		wc << 1,1,1,1,1,1;
 	}
