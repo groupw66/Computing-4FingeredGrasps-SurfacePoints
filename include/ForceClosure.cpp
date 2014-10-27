@@ -37,7 +37,7 @@ double ForceClosure::getMindist_Qhull(std::vector<Wrench> wrenchs)
 }
 
 
-Eigen::Vector3d perpendicular_vector(const Eigen::Vector3d &normal)
+inline Eigen::Vector3d perpendicular_vector(const Eigen::Vector3d &normal)
 {
 	// find perpendicular vector
 	Eigen::Vector3d perpendicular;
@@ -54,7 +54,7 @@ Eigen::Vector3d perpendicular_vector(const Eigen::Vector3d &normal)
 	return perpendicular;
 }
 
-std::pair<double, Eigen::Matrix<double,6,1> > SuppFunL1(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
+inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFunL1(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
 {
 	Eigen::Matrix<double,6,1> Spoint;
 	double Svalue = std::numeric_limits<double>::min();
@@ -63,26 +63,39 @@ std::pair<double, Eigen::Matrix<double,6,1> > SuppFunL1(const Eigen::Matrix<doub
 		double hui=hypot(di(1), di(2)), hw=uFriction*hui + di(0);
 		if (Svalue<hw) {
 			Svalue=hw;
-			if (hui>0) {
-				double temp=uFriction/hui;
-				Eigen::Vector3d tmp;
-				tmp << 1., temp*di(1), temp*di(2);
-				Spoint=G*tmp;
-			}
-			else{
-				Spoint=G.col(0);
-			}
+			double temp=hui>0?uFriction/hui:0.;
+			Eigen::Vector3d tmp;
+			tmp << 1., temp*di(1), temp*di(2);
+			Spoint=G*tmp;
 		}
 	}
 	return std::pair<double, Eigen::Matrix<double,6,1> >(Svalue, Spoint);
 }
 
-std::pair<double, Eigen::Matrix<double,6,1> > SuppFun(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
+inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFunLinf(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
+{
+	Eigen::Matrix<double,6,1> Spoint;
+	double Svalue = std::numeric_limits<double>::min();
+	for (const Eigen::Matrix<double,6,3> &G : Gi) {
+		Eigen::Vector3d di=G.transpose()*u;
+		double hui=hypot(di(1), di(2)), hw=uFriction*hui + di(0);
+		if (hw>0) {
+			Svalue+=hw;
+			double temp=hui>0?uFriction/hui:0.;
+			Eigen::Vector3d tmp;
+			tmp << 1., temp*di(1), temp*di(2);
+			Spoint+=G*tmp;
+		}
+	}
+	return std::pair<double, Eigen::Matrix<double,6,1> >(Svalue, Spoint);
+}
+
+inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFun(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
 {
 	return SuppFunL1(u, Gi, uFriction);
 }
 
-std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(const Eigen::Matrix<double,6,1> &b, Eigen::MatrixXd A, Eigen::VectorXd c, double Tol)
+inline std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(const Eigen::Matrix<double,6,1> &b, Eigen::MatrixXd A, Eigen::VectorXd c, double Tol)
 {
 	//	This subalgorithm is to find the minimal subset of 'A' such that the
 	//	point on the convex cone of 'A' closest to 'b' can be written as a
@@ -131,42 +144,59 @@ std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(const Eigen
 		bool not_found=true;
 		// initialize subA
 		subA.resize(6, l-1);
-		int atSubA=0, atANeg=0;
-		num_neg=l-1;
-		Eigen::MatrixXd ANeg(6,num_neg);
+		subA.col(0)=A.col(l-1);
+		int num_pos=l-1-num_neg;
+//		Eigen::MatrixXd ANeg(6,num_neg);
+		std::vector<Eigen::Matrix<double,6,1> > ANeg,APos;
+		ANeg.reserve(num_neg);
+		APos.reserve(num_pos);
 		for(int i=0;i<l-1;++i){
-			if (true || c(i)<0){
-				ANeg.col(atANeg++)=A.col(i);
-			}
-			else{
-				subA.col(atSubA++)=A.col(i);
-			}
+			(c(i)<0)?
+				ANeg.push_back(A.col(i))
+			:
+				APos.push_back(A.col(i));
 		}
-		subA.col(atSubA++)=A.col(l-1);
-		std::vector<bool> indices(num_neg,true);
-		int l_=0;
+		int l_=1; // number of removed element
+		std::vector<bool> negIndices(num_neg), posIndices(num_pos);
 		do {
-			indices[l_++]=false;
 			subA.conservativeResize(6, l-l_);
+			int nNeg=std::min(l_,num_neg), nPos=l_-nNeg;
+			std::fill_n(negIndices.begin(),nNeg,false);
+			std::fill(negIndices.begin()+nNeg,negIndices.end(),true);
+			std::fill_n(posIndices.begin(),nPos,false);
+			std::fill(posIndices.begin()+nPos,posIndices.end(),true);
 			do{
-				// calculate next subA
-				int iSubA=atSubA;
-				for(int i=0;i<num_neg;++i){
-					if (indices[i]) {
-						subA.col(iSubA++)=ANeg.col(i);
-					}
-				}
-//				c = (subA.transpose()*subA).inverse()*subA.transpose()*b;
-				c = subA.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
-				if (c.minCoeff() > 0) {
-					r = b - subA*c;
-					if ((r.transpose()*A).maxCoeff() < Tol) {
-						not_found = false;
-						break;
-					}
-				}
-			} while (std::next_permutation(indices.begin(), indices.end()));
-		}while (not_found);
+				do{
+					do{
+						// calculate next subA
+						int iSubA=1;
+						for(int i=0;i<num_neg;++i){
+							if (negIndices[i]) {
+								subA.col(iSubA++)=ANeg[i];
+							}
+						}
+						for(int i=0;i<num_pos;++i){
+							if (posIndices[i]) {
+								subA.col(iSubA++)=APos[i];
+							}
+						}
+		//				c = (subA.transpose()*subA).inverse()*subA.transpose()*b;
+						c = subA.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+						if (c.minCoeff() > 0) {
+							r = b - subA*c;
+							if ((r.transpose()*A).maxCoeff() < Tol) {
+								not_found = false;
+								break;
+							}
+						}
+					} while(std::next_permutation(posIndices.begin(), posIndices.end()));
+				} while(not_found && std::next_permutation(negIndices.begin(), negIndices.end()));
+
+				negIndices[--nNeg]=true;
+				posIndices[nPos++]=false;
+			} while(not_found && nNeg>0 && nPos<=num_pos);
+			++l_;
+		} while (not_found);
 	}
 	else{
 		subA = A;
@@ -176,7 +206,7 @@ std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(const Eigen
 	//	If any component of 'c' is zero, then the corresponding element in
 	//	'subA' can be removed.
 	for (int i=0; i<subA.cols(); ) {
-		if (c(i)<=0) { // rarely happened
+		if (c(i)<Tol) { // rarely happened
 			// remove column #i
 			subA.block(0, i, 6, subA.cols()-i-1) = subA.rightCols(subA.cols()-i-1);
 			subA.conservativeResize(Eigen::NoChange, subA.cols()-1);
@@ -187,7 +217,7 @@ std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(const Eigen
 	return std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd>(r, subA);
 }
 
-std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorithm(const Eigen::Matrix<double,6,1> &b, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction, double Tol)
+inline std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorithm(const Eigen::Matrix<double,6,1> &b, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction, double Tol)
 {
 	// This algorithm computes the minimum distance between a convex cone and a point 'b' (IEEE T-RO'09)
 	//	'd' --- the minimum distance
@@ -219,7 +249,7 @@ std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorithm(const
 			Eigen::VectorXd p = A*c;
 			r = b-p;
 			d = r.norm();
-			if (d<1e-8 || l==6) {
+			if (d<Tol || l==6) {
 				break;
 			}
 		}
@@ -232,7 +262,7 @@ std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorithm(const
 	return std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd>(d, r, A);
 }
 
-std::vector<Eigen::Matrix<double,6,3> > getG(SurfacePoint &sp1, SurfacePoint &sp2, SurfacePoint &sp3, SurfacePoint &sp4, const Eigen::Vector3d &cm){
+inline std::vector<Eigen::Matrix<double,6,3> > getG(SurfacePoint &sp1, SurfacePoint &sp2, SurfacePoint &sp3, SurfacePoint &sp4, const Eigen::Vector3d &cm){
 	// calculate Grasp Matrix
 	sp1.position-=cm;
 	sp2.position-=cm;
@@ -280,18 +310,34 @@ std::vector<Eigen::Matrix<double,6,3> > getG(SurfacePoint &sp1, SurfacePoint &sp
 	return Gi;
 }
 
+bool ForceClosure::isFC_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4, Eigen::Vector3d cm, double halfAngle)
+{
+	std::vector<Eigen::Matrix<double,6,3> > Gi=getG(sp1,sp2,sp3,sp4,cm);
+	// force-closure test using the ZC distance algorithm (IEEE T-RO'09)
+	Eigen::Matrix<double,6,1> wc = -(Gi[0].col(0)+Gi[1].col(0)+Gi[2].col(0)+Gi[3].col(0))/4.;
+	double Tol=1e-7, d;
+	if (wc.norm() < Tol){
+		wc << 1,1,1,1,1,1;
+	}
+	double uFriction=std::tan(halfAngle*M_PI/180.);
+//	uFriction=0.17632698070846497540031805328908376395702362060546875;
+	std::tie(d, std::ignore, std::ignore) = ZCAlgorithm(wc, Gi, uFriction, Tol);
+	return d<Tol;
+
+}
+
 double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4, Eigen::Vector3d cm, double halfAngle)
 {
 	std::vector<Eigen::Matrix<double,6,3> > Gi=getG(sp1,sp2,sp3,sp4,cm);
 	// force-closure test using the ZC distance algorithm (IEEE T-RO'09)
 	Eigen::Matrix<double,6,1> wc = -(Gi[0].col(0)+Gi[1].col(0)+Gi[2].col(0)+Gi[3].col(0))/4., r;
 	double Tol=1e-7, epsilon=1e-6, d;
-	if (wc.norm() < 1e-10){
+	if (wc.norm() < Tol){
 		wc << 1,1,1,1,1,1;
 	}
-	Eigen::MatrixXd A;
 	double uFriction=std::tan(halfAngle*M_PI/180.);
 //	uFriction=0.17632698070846497540031805328908376395702362060546875;
+	Eigen::MatrixXd A;
 	std::tie(d, r, A) = ZCAlgorithm(wc, Gi, uFriction, Tol);
 	if (d > Tol){
 		// the grasp does not have force closure
@@ -344,7 +390,7 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 		primW.push_back(Spoint);
 		std::vector<int> ids_facets_update;
 		for (int k=0;k<norm_facets.size();++k) {
-			if (Spoint.dot(norm_facets[k])-1 > 1e-10){
+			if (Spoint.dot(norm_facets[k])-1 > Tol){
 				ids_facets_update.push_back(k);
 			}
 		}

@@ -5,6 +5,7 @@
 #include "PositionsNormalsFile.h"
 #include "ObjectSurfacePoints.h"
 #include "Timer.h"
+#include "dae/DaeHeuristic.h"
 namespace
 {
 
@@ -15,10 +16,10 @@ TEST(ForceClosure_getMindist_Qhull)
 
 TEST(ForceClosure_near_Qhull_ZC)
 {
-	PositionsNormalsFile obj("test/meshes/spectralMesh/ammo50.txt");
+	PositionsNormalsFile obj("test/meshes/spectralMesh/cow500.txt");
 	ObjectSurfacePoints osp(obj);
 	unsigned int nSurfacePoint = osp.surfacePoints.size();
-	int step=1<<3;
+	int step=1<<7;
 	Timer tmr;
 	double qHullRunTime=0.,ZCRunTime=0.;
 	for(unsigned int a=0 ; a<nSurfacePoint ; a+=step){
@@ -38,18 +39,23 @@ TEST(ForceClosure_near_Qhull_ZC)
 
 					double diff=mindistZC-mindistQhull;
 					// check FC
-					CHECK_EQUAL(isFCQhull, isFCZC);
+					if(isFCQhull){
+						CHECK(isFCZC || fabs(diff)<1e-7);
+					}
+					else{
+						CHECK(!isFCZC || diff<2e-4);
+					}
 					if (isFCQhull ^ isFCZC){
-//						printf("%d %d %d %d\n",a,b,c,d);
+						printf("%d %d %d %d\n",a,b,c,d);
 						printf("Qhull:%lf | ZC: %lf | diff %lf\n",mindistQhull,mindistZC,diff);
-						std::cout<<osp.surfacePoints[a].position<<std::endl;
-						std::cout<<osp.surfacePoints[a].normal<<std::endl;
-						std::cout<<osp.surfacePoints[b].position<<std::endl;
-						std::cout<<osp.surfacePoints[b].normal<<std::endl;
-						std::cout<<osp.surfacePoints[c].position<<std::endl;
-						std::cout<<osp.surfacePoints[c].normal<<std::endl;
-						std::cout<<osp.surfacePoints[d].position<<std::endl;
-						std::cout<<osp.surfacePoints[d].normal<<std::endl;
+						std::cout<<osp.surfacePoints[a].position.transpose()<<" ";
+						std::cout<<osp.surfacePoints[a].normal.transpose()<<std::endl;
+						std::cout<<osp.surfacePoints[b].position.transpose()<<" ";
+						std::cout<<osp.surfacePoints[b].normal.transpose()<<std::endl;
+						std::cout<<osp.surfacePoints[c].position.transpose()<<" ";
+						std::cout<<osp.surfacePoints[c].normal.transpose()<<std::endl;
+						std::cout<<osp.surfacePoints[d].position.transpose()<<" ";
+						std::cout<<osp.surfacePoints[d].normal.transpose()<<std::endl;
 					}
 
 					if(isFCZC){
@@ -66,5 +72,29 @@ TEST(ForceClosure_near_Qhull_ZC)
 	}
 	printf("QHull: %lf\nZC: %lf\n",qHullRunTime,ZCRunTime);
 }
-
+//*
+TEST(Random_ForceClosure)
+{
+	PositionsNormalsFile obj("test/meshes/spectralMesh/cow500.txt");
+	ObjectSurfacePoints osp(obj);
+	unsigned int nSurfacePoint = osp.surfacePoints.size();
+	int nSol=0;
+	std::uniform_int_distribution<> rand(0,nSurfacePoint-1);
+	std::default_random_engine rng;
+//	rng.seed(std::random_device());
+	DaeHeuristicChecker daeHeuristicChecker(M_PI / 18.);
+	Timer tmr;
+//	while(nSol<107820){
+	while(nSol<6444){
+		int a=rand(rng),b=rand(rng),c=rand(rng),d=rand(rng);
+//		if(ForceClosure::isFC_ZC(osp.surfacePoints[a],osp.surfacePoints[b],osp.surfacePoints[c],osp.surfacePoints[d],osp.cm))
+		if(daeHeuristicChecker.isForceClosure(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d]) && (ForceClosure::isFC_ZC(osp.surfacePoints[a],osp.surfacePoints[b],osp.surfacePoints[c],osp.surfacePoints[d],osp.cm)))
+		{
+			++nSol;
+//			printf("%d %lf\n",nSol,tmr.elapsed());
+		}
+	}
+	printf("Found %d soltions in %lf second\n",nSol,tmr.elapsed());
+}
+//*/
 }
