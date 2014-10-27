@@ -15,6 +15,8 @@ namespace ForceClosure
                       Eigen::Vector3d cm = Eigen::Vector3d(0,0,0), double halfAngle = 10.d, int nPyramidSide = DEFAULT_N_PYRAMID_SIDE);
     double getMindist_Qhull(std::vector<Wrench> wrenchs);
     //double getMindist_ZC(std::vector<Wrench> wrenchs);
+	double getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4,
+                      Eigen::Vector3d cm = Eigen::Vector3d(0,0,0), double halfAngle = 10.);
 };
 
 #endif // FORCECLOSURE_H
