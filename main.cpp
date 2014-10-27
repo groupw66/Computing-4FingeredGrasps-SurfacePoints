@@ -3,6 +3,7 @@
 #include <UnitTest++.h>
 #include <cstring>
 #include <map>
+#include <unordered_set>
 #include "SamplingPoints.h"
 #include "Compute4FingeredGrasps.h"
 #include "OBJFile.h"
@@ -446,6 +447,137 @@ void solsMindist_solsMindistSorted(std::string solsMindistFilename, std::string 
     outFile.close();
 }
 
+void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilename, std::string outFilename,
+                                      double halfAngle = 10.d, double timelimit = 0.5d)
+{
+    std::ifstream objFile(objFilename.c_str());
+    if(!objFile.is_open()){
+        std::cout << "! Can't open " << objFilename << std::endl;
+        return;
+    }
+    objFile.close();
+    std::ofstream outFile(outFilename.c_str());
+    outFile.unsetf ( std::ios::floatfield );
+    outFile.precision(std::numeric_limits<long double>::digits10);
+    if(!outFile.is_open()){
+        std::cout << "! Can't open " << outFilename << std::endl;
+        return;
+    }
+    //open object model file
+    ObjectSurfacePoints osp;
+    std::string objFileExt = objFilename.substr(objFilename.find_last_of(".") + 1);
+    if(objFileExt == "obj") {
+        OBJFile obj(objFilename.c_str());
+        osp.open(obj);
+    }
+    else if(objFileExt == "txt") {
+        PositionsNormalsFile obj(objFilename.c_str());
+        osp.open(obj);
+    }
+    else {
+        std::cout << "Not support object file : " << objFilename << std::endl;
+    }
+
+    std::vector<std::tuple<double, Grasp, double> > sols;
+    std::unordered_set<std::string> solsSet;
+    int nTest;
+    Timer tmr;
+    std::random_device rd;
+    std::default_random_engine rng(rd());
+    if(submode == "random4P"){
+        std::uniform_int_distribution<int> random_int(0,osp.surfacePoints.size()-1);
+        //std::unordered_set<tuple<int,int,int,int> > uniqueGrasps;
+        DaeHeuristicChecker daeHeuristicChecker(halfAngle * M_PI / 180.d);
+        tmr.reset();
+        while(tmr.elapsed() < timelimit){
+            //printf("!"); fflush(stdout);
+            int a = random_int(rng),
+                b = random_int(rng),
+                c = random_int(rng),
+                d = random_int(rng);
+            Grasp grasp(a,b,c,d);
+            //if(!uniqueGrasps.insert(std::make_tuple(grasp[0],grasp[1],grasp[2],grasp[3])).second)
+            if(a==b || a==c || a==d || b==c || b==d || c==d)
+                continue;
+            nTest++;
+            //printf("."); fflush(stdout);
+            bool passFilter = daeHeuristicChecker.isForceClosure(osp.surfacePoints[a], osp.surfacePoints[b],
+                                                                 osp.surfacePoints[c], osp.surfacePoints[d]);
+            if(!passFilter)
+                continue;
+            //printf("*"); fflush(stdout);
+            bool isFC = ForceClosure::isFC_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
+                                                 osp.surfacePoints[c], osp.surfacePoints[d],
+                                                 Eigen::Vector3d(0,0,0), halfAngle);
+            //printf("_"); fflush(stdout);
+            if(!isFC)
+                continue;
+            //printf("/"); fflush(stdout);
+            if(!solsSet.insert(grasp.to_str()).second)
+                continue;
+            //printf("+"); fflush(stdout);
+            double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
+                                                         osp.surfacePoints[c], osp.surfacePoints[d],
+                                                         Eigen::Vector3d(0,0,0), halfAngle);
+            //printf("-"); fflush(stdout);
+            if(mindist > 0){
+                sols.push_back(std::make_tuple(mindist, grasp, tmr.elapsed()));
+            }
+        }
+        //printf("o"); fflush(stdout);
+    }
+    else if(submode == "uniform" || submode == "normalDist"){
+        Eigen::Vector3d minAABB = osp.minAABB,
+                        maxAABB = osp.maxAABB;
+        std::uniform_real_distribution<double> randUX(minAABB.x(), maxAABB.x());
+        std::uniform_real_distribution<double> randUY(minAABB.y(), maxAABB.y());
+        std::uniform_real_distribution<double> randUZ(minAABB.z(), maxAABB.z());
+        Eigen::Vector3d mean = Eigen::Vector3d(0,0,0),
+                        sd = (osp.maxAABB - osp.minAABB)/6;
+        std::normal_distribution<double> randNX(mean.x(), sd.x());
+        std::normal_distribution<double> randNY(mean.y(), sd.y());
+        std::normal_distribution<double> randNZ(mean.z(), sd.z());
+        //std::unordered_set<std::tuple<double,double,double> > uniquePoints;
+        tmr.reset();
+        while(tmr.elapsed() < timelimit){
+            Eigen::Vector3d sampledPoint;
+            if(submode == "uniform"){
+                sampledPoint = Eigen::Vector3d(randUX(rng), randUY(rng), randUZ(rng));
+            }
+            else if(submode == "normalDist"){
+                sampledPoint = Eigen::Vector3d(randNX(rng), randNY(rng), randNZ(rng));
+            }
+            nTest++;
+            std::vector<unsigned int> filteredPointIds;
+            Compute4FingeredGrasps::pointInConesFilter(filteredPointIds, osp.surfacePoints, sampledPoint, halfAngle);
+
+            std::vector<Grasp> fcGrasps;
+            if(filteredPointIds.size() >= 4){
+                Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
+                                            fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
+            }
+            for(Grasp g : fcGrasps){
+                if(!solsSet.insert(g.to_str()).second)
+                    continue;
+                double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[g[0]], osp.surfacePoints[g[1]],
+                                                         osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
+                                                         Eigen::Vector3d(0,0,0), halfAngle);
+                sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
+            }
+        }
+    }
+    else{
+        std::cout << "sub mode should be random4P, uniform or normalDist" << std::endl;
+    }
+    //write output
+    outFile << sols.size() << " " << nTest << "\n";
+    for(auto sol : sols){
+        outFile << std::get<0>(sol) << " " << std::get<2>(sol) << " " <<
+                    std::get<1>(sol)[0] << " " << std::get<1>(sol)[1] << " " << std::get<1>(sol)[2] << " " << std::get<1>(sol)[3] << "\n";
+    }
+    outFile.close();
+}
+
 int main(int argc,char *argv[])
 {
     if(argc > 1){
@@ -520,6 +652,14 @@ int main(int argc,char *argv[])
                 solsMindist_solsMindistSorted(argv[2], //solsMindistFilename
                                               argv[3] //outFilename
                                               );
+            }
+            else if(mode == "fixtime"){
+                runCompute4FingeredGraspsFixtime(argv[2], //submode
+                                                 argv[3], //objFilename,
+                                                 argv[4], //outFilename,
+                                                 atof(argv[5]), //halfAngle,
+                                                 atof(argv[6]) //timelimit
+                                                 );
             }
             else{
                 std::cout << "Unknown command..." << std::endl;
