@@ -410,6 +410,40 @@ void solsMindist_solsMindistSet(std::string solsMindistFilename, std::string out
     int idPercen = allFCSorteds.size()*(percen/100.d) - 1;
     solsMindist_solsMindistSet(solsMindistFilename,outFilename,allFCSorteds[idPercen].second);
 }
+void solsMindist_solsMindistSorted(std::string solsMindistFilename, std::string outFilename)
+{
+    std::ifstream solsMindistFile(solsMindistFilename.c_str());
+    if(!solsMindistFile.is_open()){
+        std::cout << "! Can't open " << solsMindistFilename << std::endl;
+        return;
+    }
+    std::ofstream outFile(outFilename.c_str());
+    outFile.unsetf ( std::ios::floatfield );
+    outFile.precision(std::numeric_limits<long double>::digits10);
+    if(!outFile.is_open()){
+        std::cout << "! Can't open " << outFilename << std::endl;
+        return;
+    }
+    std::set<std::pair<double,Grasp> > solsSet;
+    int n;
+    solsMindistFile >> n;
+    for(int i=0 ; i<n; ++i){
+        int nSol;
+        solsMindistFile >> nSol;
+        for(int j=0 ; j<nSol ; ++j){
+            int a, b, c, d;
+            double mindist;
+            solsMindistFile >> a >> b >> c >> d >> mindist;
+            solsSet.insert(std::make_pair(mindist,Grasp(a,b,c,d)));
+        }
+    }
+    outFile << solsSet.size() << "\n";
+    for(auto it=solsSet.rbegin() ; it!=solsSet.rend() ; it++){
+        outFile << (*it).second[0] << " " << (*it).second[1] << " " << (*it).second[2] << " " << (*it).second[3] << " " << (*it).first << "\n";
+    }
+    solsMindistFile.close();
+    outFile.close();
+}
 
 int main(int argc,char *argv[])
 {
@@ -480,6 +514,11 @@ int main(int argc,char *argv[])
                                                 argv[3] //outFilename
                                                 );
                 }
+            }
+            else if(mode == "solsMindist_solsMindistSorted"){
+                solsMindist_solsMindistSorted(argv[2], //solsMindistFilename
+                                              argv[3] //outFilename
+                                              );
             }
             else{
                 std::cout << "Unknown command..." << std::endl;
