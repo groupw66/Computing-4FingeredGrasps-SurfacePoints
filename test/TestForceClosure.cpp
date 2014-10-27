@@ -26,11 +26,6 @@ TEST(ForceClosure_near_Qhull_ZC)
 //			printf("SurfacePointId: %d\n",b);
 			for(unsigned int c=b+1 ; c<nSurfacePoint ; c+=step){
 				for(unsigned int d=c+1 ; d<nSurfacePoint ; d+=step){
-//					printf("%.9lf %.9lf %.9lf %.9lf %.9lf %.9lf\n",osp.surfacePoints[a].position.x(),osp.surfacePoints[a].position.y(),osp.surfacePoints[a].position.z(),osp.surfacePoints[a].normal.x(),osp.surfacePoints[a].normal.y(),osp.surfacePoints[a].normal.z());
-//					printf("%.9lf %.9lf %.9lf %.9lf %.9lf %.9lf\n",osp.surfacePoints[b].position.x(),osp.surfacePoints[b].position.y(),osp.surfacePoints[b].position.z(),osp.surfacePoints[b].normal.x(),osp.surfacePoints[b].normal.y(),osp.surfacePoints[b].normal.z());
-//					printf("%.9lf %.9lf %.9lf %.9lf %.9lf %.9lf\n",osp.surfacePoints[c].position.x(),osp.surfacePoints[c].position.y(),osp.surfacePoints[c].position.z(),osp.surfacePoints[c].normal.x(),osp.surfacePoints[c].normal.y(),osp.surfacePoints[c].normal.z());
-//					printf("%.9lf %.9lf %.9lf %.9lf %.9lf %.9lf\n",osp.surfacePoints[d].position.x(),osp.surfacePoints[d].position.y(),osp.surfacePoints[d].position.z(),osp.surfacePoints[d].normal.x(),osp.surfacePoints[d].normal.y(),osp.surfacePoints[d].normal.z());
-
 					tmr.reset();
 					double mindistQhull = ForceClosure::getMindist_Qhull(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d], osp.cm);
 					qHullRunTime+=tmr.elapsed();
@@ -45,13 +40,16 @@ TEST(ForceClosure_near_Qhull_ZC)
 					// check FC
 					CHECK_EQUAL(isFCQhull, isFCZC);
 					if (isFCQhull ^ isFCZC){
-						printf("Qhull:%lf | ZC: %lf | diff %lf\n",mindistQhull,mindistZC,diff);
 //						printf("%d %d %d %d\n",a,b,c,d);
-						printf("%.9lf %.9lf %.9lf %.9lf %.9lf %.9lf\n",osp.surfacePoints[a].position.x(),osp.surfacePoints[a].position.y(),osp.surfacePoints[a].position.z(),osp.surfacePoints[a].normal.x(),osp.surfacePoints[a].normal.y(),osp.surfacePoints[a].normal.z());
-						printf("%.9lf %.9lf %.9lf %.9lf %.9lf %.9lf\n",osp.surfacePoints[b].position.x(),osp.surfacePoints[b].position.y(),osp.surfacePoints[b].position.z(),osp.surfacePoints[b].normal.x(),osp.surfacePoints[b].normal.y(),osp.surfacePoints[b].normal.z());
-						printf("%.9lf %.9lf %.9lf %.9lf %.9lf %.9lf\n",osp.surfacePoints[c].position.x(),osp.surfacePoints[c].position.y(),osp.surfacePoints[c].position.z(),osp.surfacePoints[c].normal.x(),osp.surfacePoints[c].normal.y(),osp.surfacePoints[c].normal.z());
-						printf("%.9lf %.9lf %.9lf %.9lf %.9lf %.9lf\n",osp.surfacePoints[d].position.x(),osp.surfacePoints[d].position.y(),osp.surfacePoints[d].position.z(),osp.surfacePoints[d].normal.x(),osp.surfacePoints[d].normal.y(),osp.surfacePoints[d].normal.z());
-						printf("mindistQhull %lf | mindistZC %lf\n",mindistQhull,mindistZC);
+						printf("Qhull:%lf | ZC: %lf | diff %lf\n",mindistQhull,mindistZC,diff);
+						std::cout<<osp.surfacePoints[a].position<<std::endl;
+						std::cout<<osp.surfacePoints[a].normal<<std::endl;
+						std::cout<<osp.surfacePoints[b].position<<std::endl;
+						std::cout<<osp.surfacePoints[b].normal<<std::endl;
+						std::cout<<osp.surfacePoints[c].position<<std::endl;
+						std::cout<<osp.surfacePoints[c].normal<<std::endl;
+						std::cout<<osp.surfacePoints[d].position<<std::endl;
+						std::cout<<osp.surfacePoints[d].normal<<std::endl;
 					}
 
 					if(isFCZC){
