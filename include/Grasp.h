@@ -17,7 +17,7 @@ class Grasp
 
         std::vector<unsigned int> surfacePoints;
 
-        inline unsigned int operator[] (unsigned int i){
+        inline unsigned int operator[] (unsigned int i) const {
             return surfacePoints[i];
         }
 
