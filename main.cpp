@@ -217,13 +217,13 @@ void allFC(std::string surfacePointFilename, std::string outFilename, double hal
     DaeHeuristicChecker daeHeuristicChecker(halfAngle * M_PI / 180.d);
     unsigned int nSurfacePoint = osp.surfacePoints.size();
     for(unsigned int a=0 ; a<nSurfacePoint ; ++a){
-        std::cout << outFilename << " : a = " << a << std::endl;
+        //std::cout << outFilename << " : a = " << a << std::endl;
         for(unsigned int b=a+1 ; b<nSurfacePoint ; ++b){
             for(unsigned int c=b+1 ; c<nSurfacePoint ; ++c){
                 for(unsigned int d=c+1 ; d<nSurfacePoint ; ++d){
                     bool passFilter = daeHeuristicChecker.isForceClosure(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d]);
                     if(passFilter){
-                        double mindist = ForceClosure::getMindist_Qhull(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d], osp.cm);
+                        double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[a], osp.surfacePoints[b], osp.surfacePoints[c], osp.surfacePoints[d], osp.cm);
                         if(mindist > 0){
                             outFile << a << " " << b << " " << c << " " << d << " " << mindist << "\n";
                         }
