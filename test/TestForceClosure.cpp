@@ -15,10 +15,10 @@ TEST(ForceClosure_getMindist_Qhull)
 
 TEST(ForceClosure_near_Qhull_ZC)
 {
-	PositionsNormalsFile obj("test/meshes/spectralMesh/ammo50.txt");
+	PositionsNormalsFile obj("test/meshes/spectralMesh/cow500.txt");
 	ObjectSurfacePoints osp(obj);
 	unsigned int nSurfacePoint = osp.surfacePoints.size();
-	int step=1<<3;
+	int step=1<<6;
 	Timer tmr;
 	double qHullRunTime=0.,ZCRunTime=0.;
 	for(unsigned int a=0 ; a<nSurfacePoint ; a+=step){
@@ -38,18 +38,23 @@ TEST(ForceClosure_near_Qhull_ZC)
 
 					double diff=mindistZC-mindistQhull;
 					// check FC
-					CHECK_EQUAL(isFCQhull, isFCZC);
+					if(isFCQhull){
+						CHECK(isFCZC || fabs(diff)<1e-7);
+					}
+					else{
+						CHECK(!isFCZC || diff<2e-4);
+					}
 					if (isFCQhull ^ isFCZC){
-//						printf("%d %d %d %d\n",a,b,c,d);
+						printf("%d %d %d %d\n",a,b,c,d);
 						printf("Qhull:%lf | ZC: %lf | diff %lf\n",mindistQhull,mindistZC,diff);
-						std::cout<<osp.surfacePoints[a].position<<std::endl;
-						std::cout<<osp.surfacePoints[a].normal<<std::endl;
-						std::cout<<osp.surfacePoints[b].position<<std::endl;
-						std::cout<<osp.surfacePoints[b].normal<<std::endl;
-						std::cout<<osp.surfacePoints[c].position<<std::endl;
-						std::cout<<osp.surfacePoints[c].normal<<std::endl;
-						std::cout<<osp.surfacePoints[d].position<<std::endl;
-						std::cout<<osp.surfacePoints[d].normal<<std::endl;
+						std::cout<<osp.surfacePoints[a].position.transpose()<<" ";
+						std::cout<<osp.surfacePoints[a].normal.transpose()<<std::endl;
+						std::cout<<osp.surfacePoints[b].position.transpose()<<" ";
+						std::cout<<osp.surfacePoints[b].normal.transpose()<<std::endl;
+						std::cout<<osp.surfacePoints[c].position.transpose()<<" ";
+						std::cout<<osp.surfacePoints[c].normal.transpose()<<std::endl;
+						std::cout<<osp.surfacePoints[d].position.transpose()<<" ";
+						std::cout<<osp.surfacePoints[d].normal.transpose()<<std::endl;
 					}
 
 					if(isFCZC){
