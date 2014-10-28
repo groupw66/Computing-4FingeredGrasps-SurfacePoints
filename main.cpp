@@ -516,6 +516,41 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
             }
         }
     }
+    else if(submode == "random4PQhull"){
+        std::uniform_int_distribution<int> random_int(0,osp.surfacePoints.size()-1);
+        DaeHeuristicChecker daeHeuristicChecker(halfAngle * M_PI / 180.d);
+        tmr.reset();
+        while(tmr.elapsed() < timelimit){
+            int a = random_int(rng),
+                b = random_int(rng),
+                c = random_int(rng),
+                d = random_int(rng);
+            Grasp grasp(a,b,c,d);
+            if(a==b || a==c || a==d || b==c || b==d || c==d)
+                continue;
+            nTest++;
+            /*
+            bool passFilter = daeHeuristicChecker.isForceClosure(osp.surfacePoints[a], osp.surfacePoints[b],
+                                                                 osp.surfacePoints[c], osp.surfacePoints[d]);
+            if(!passFilter)
+                continue;
+            bool isFC = ForceClosure::isFC_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
+                                                 osp.surfacePoints[c], osp.surfacePoints[d],
+                                                 Eigen::Vector3d(0,0,0), halfAngle);
+            if(!isFC)
+                continue;
+            if(!solsSet.insert(grasp.to_str()).second)
+                continue;
+                */
+            double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
+                                                         osp.surfacePoints[c], osp.surfacePoints[d],
+                                                         Eigen::Vector3d(0,0,0), halfAngle);
+            if(mindist > 0){
+                if(solsSet.insert(grasp.to_str()).second)
+                    sols.push_back(std::make_tuple(mindist, grasp, tmr.elapsed()));
+            }
+        }
+    }
     else if(submode == "uniform"){
         Eigen::Vector3d minAABB = osp.minAABB,
                         maxAABB = osp.maxAABB;
