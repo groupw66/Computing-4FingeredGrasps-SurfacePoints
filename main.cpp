@@ -486,45 +486,35 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
     std::default_random_engine rng(rd());
     if(submode == "random4P"){
         std::uniform_int_distribution<int> random_int(0,osp.surfacePoints.size()-1);
-        //std::unordered_set<tuple<int,int,int,int> > uniqueGrasps;
         DaeHeuristicChecker daeHeuristicChecker(halfAngle * M_PI / 180.d);
         tmr.reset();
         while(tmr.elapsed() < timelimit){
-            //printf("!"); fflush(stdout);
             int a = random_int(rng),
                 b = random_int(rng),
                 c = random_int(rng),
                 d = random_int(rng);
             Grasp grasp(a,b,c,d);
-            //if(!uniqueGrasps.insert(std::make_tuple(grasp[0],grasp[1],grasp[2],grasp[3])).second)
             if(a==b || a==c || a==d || b==c || b==d || c==d)
                 continue;
             nTest++;
-            //printf("."); fflush(stdout);
             bool passFilter = daeHeuristicChecker.isForceClosure(osp.surfacePoints[a], osp.surfacePoints[b],
                                                                  osp.surfacePoints[c], osp.surfacePoints[d]);
             if(!passFilter)
                 continue;
-            //printf("*"); fflush(stdout);
             bool isFC = ForceClosure::isFC_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
                                                  osp.surfacePoints[c], osp.surfacePoints[d],
                                                  Eigen::Vector3d(0,0,0), halfAngle);
-            //printf("_"); fflush(stdout);
             if(!isFC)
                 continue;
-            //printf("/"); fflush(stdout);
             if(!solsSet.insert(grasp.to_str()).second)
                 continue;
-            //printf("+"); fflush(stdout);
             double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
                                                          osp.surfacePoints[c], osp.surfacePoints[d],
                                                          Eigen::Vector3d(0,0,0), halfAngle);
-            //printf("-"); fflush(stdout);
             if(mindist > 0){
                 sols.push_back(std::make_tuple(mindist, grasp, tmr.elapsed()));
             }
         }
-        //printf("o"); fflush(stdout);
     }
     else if(submode == "uniform" || submode == "normalDist"){
         Eigen::Vector3d minAABB = osp.minAABB,
