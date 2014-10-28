@@ -547,6 +547,8 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
                                             fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
             }
             for(Grasp g : fcGrasps){
+                if(tmr.elapsed() >= timelimit)
+                    break;
                 if(!solsSet.insert(g.to_str()).second)
                     continue;
                 double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[g[0]], osp.surfacePoints[g[1]],
