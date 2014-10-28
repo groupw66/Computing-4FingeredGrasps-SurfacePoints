@@ -390,7 +390,7 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 		primW.push_back(Spoint);
 		std::vector<int> ids_facets_update;
 		for (int k=0;k<norm_facets.size();++k) {
-			if (Spoint.dot(norm_facets[k])-1 > Tol){
+			if (Spoint.dot(norm_facets[k])-1 > 1e-9){
 				ids_facets_update.push_back(k);
 			}
 		}
