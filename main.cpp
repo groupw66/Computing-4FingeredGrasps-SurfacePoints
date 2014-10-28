@@ -480,7 +480,7 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
 
     std::vector<std::tuple<double, Grasp, double> > sols;
     std::unordered_set<std::string> solsSet;
-    int nTest;
+    int nTest = 0;
     Timer tmr;
     std::random_device rd;
     std::default_random_engine rng(rd());
