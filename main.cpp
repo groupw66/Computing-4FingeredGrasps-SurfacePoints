@@ -516,12 +516,38 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
             }
         }
     }
-    else if(submode == "uniform" || submode == "normalDist"){
+    else if(submode == "uniform"){
         Eigen::Vector3d minAABB = osp.minAABB,
                         maxAABB = osp.maxAABB;
         std::uniform_real_distribution<double> randUX(minAABB.x(), maxAABB.x());
         std::uniform_real_distribution<double> randUY(minAABB.y(), maxAABB.y());
         std::uniform_real_distribution<double> randUZ(minAABB.z(), maxAABB.z());
+        //std::unordered_set<std::tuple<double,double,double> > uniquePoints;
+        tmr.reset();
+        while(tmr.elapsed() < timelimit){
+            Eigen::Vector3d sampledPoint = Eigen::Vector3d(randUX(rng), randUY(rng), randUZ(rng));
+            nTest++;
+            std::vector<unsigned int> filteredPointIds;
+            Compute4FingeredGrasps::pointInConesFilter(filteredPointIds, osp.surfacePoints, sampledPoint, halfAngle);
+
+            std::vector<Grasp> fcGrasps;
+            if(filteredPointIds.size() >= 4){
+                Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
+                                            fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
+            }
+            for(Grasp g : fcGrasps){
+                if(tmr.elapsed() >= timelimit)
+                    break;
+                if(!solsSet.insert(g.to_str()).second)
+                    continue;
+                double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[g[0]], osp.surfacePoints[g[1]],
+                                                         osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
+                                                         Eigen::Vector3d(0,0,0), halfAngle);
+                sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
+            }
+        }
+    }
+    else if(submode == "normalDist" || submode == "normalDist6"){
         Eigen::Vector3d mean = Eigen::Vector3d(0,0,0),
                         sd = (osp.maxAABB - osp.minAABB)/6;
         std::normal_distribution<double> randNX(mean.x(), sd.x());
@@ -530,13 +556,69 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
         //std::unordered_set<std::tuple<double,double,double> > uniquePoints;
         tmr.reset();
         while(tmr.elapsed() < timelimit){
-            Eigen::Vector3d sampledPoint;
-            if(submode == "uniform"){
-                sampledPoint = Eigen::Vector3d(randUX(rng), randUY(rng), randUZ(rng));
+            Eigen::Vector3d sampledPoint = Eigen::Vector3d(randNX(rng), randNY(rng), randNZ(rng));
+            nTest++;
+            std::vector<unsigned int> filteredPointIds;
+            Compute4FingeredGrasps::pointInConesFilter(filteredPointIds, osp.surfacePoints, sampledPoint, halfAngle);
+
+            std::vector<Grasp> fcGrasps;
+            if(filteredPointIds.size() >= 4){
+                Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
+                                            fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
             }
-            else if(submode == "normalDist"){
-                sampledPoint = Eigen::Vector3d(randNX(rng), randNY(rng), randNZ(rng));
+            for(Grasp g : fcGrasps){
+                if(tmr.elapsed() >= timelimit)
+                    break;
+                if(!solsSet.insert(g.to_str()).second)
+                    continue;
+                double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[g[0]], osp.surfacePoints[g[1]],
+                                                         osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
+                                                         Eigen::Vector3d(0,0,0), halfAngle);
+                sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
             }
+        }
+    }
+    else if(submode == "normalDist9"){
+        Eigen::Vector3d mean = Eigen::Vector3d(0,0,0),
+                        sd = (osp.maxAABB - osp.minAABB)/9;
+        std::normal_distribution<double> randNX(mean.x(), sd.x());
+        std::normal_distribution<double> randNY(mean.y(), sd.y());
+        std::normal_distribution<double> randNZ(mean.z(), sd.z());
+        //std::unordered_set<std::tuple<double,double,double> > uniquePoints;
+        tmr.reset();
+        while(tmr.elapsed() < timelimit){
+            Eigen::Vector3d sampledPoint = Eigen::Vector3d(randNX(rng), randNY(rng), randNZ(rng));
+            nTest++;
+            std::vector<unsigned int> filteredPointIds;
+            Compute4FingeredGrasps::pointInConesFilter(filteredPointIds, osp.surfacePoints, sampledPoint, halfAngle);
+
+            std::vector<Grasp> fcGrasps;
+            if(filteredPointIds.size() >= 4){
+                Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
+                                            fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
+            }
+            for(Grasp g : fcGrasps){
+                if(tmr.elapsed() >= timelimit)
+                    break;
+                if(!solsSet.insert(g.to_str()).second)
+                    continue;
+                double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[g[0]], osp.surfacePoints[g[1]],
+                                                         osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
+                                                         Eigen::Vector3d(0,0,0), halfAngle);
+                sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
+            }
+        }
+    }
+    else if(submode == "normalDist12"){
+        Eigen::Vector3d mean = Eigen::Vector3d(0,0,0),
+                        sd = (osp.maxAABB - osp.minAABB)/12;
+        std::normal_distribution<double> randNX(mean.x(), sd.x());
+        std::normal_distribution<double> randNY(mean.y(), sd.y());
+        std::normal_distribution<double> randNZ(mean.z(), sd.z());
+        //std::unordered_set<std::tuple<double,double,double> > uniquePoints;
+        tmr.reset();
+        while(tmr.elapsed() < timelimit){
+            Eigen::Vector3d sampledPoint = Eigen::Vector3d(randNX(rng), randNY(rng), randNZ(rng));
             nTest++;
             std::vector<unsigned int> filteredPointIds;
             Compute4FingeredGrasps::pointInConesFilter(filteredPointIds, osp.surfacePoints, sampledPoint, halfAngle);
