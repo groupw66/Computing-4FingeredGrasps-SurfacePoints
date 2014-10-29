@@ -16,9 +16,9 @@ class Wrench : public Eigen::Matrix<double,6,1>
         }
         Wrench(Eigen::Vector3d position, Eigen::Vector3d force)
         {
-            force.normalize();
+//            force.normalize();
             Eigen::Vector3d torque = position.cross(force);
-            *this << force.x(), force.y(), force.z(), torque.x(), torque.y(), torque.z();
+            *this << force, torque;
         }
 
         Eigen::Vector3d force()
