@@ -13,7 +13,7 @@ TEST(Wrench_ctor0)
     Eigen::Vector3d position(1.5, 20, 398.312421);
     Eigen::Vector3d force(1, -1, 5);
     Wrench surfacePoint(position, force);
-    force.normalize();
+//    force.normalize();
     Eigen::Vector3d torque = position.cross(force);
     CHECK_CLOSE(force.x(), surfacePoint.force().x(), 1e-6);
     CHECK_CLOSE(force.y(), surfacePoint.force().y(), 1e-6);
