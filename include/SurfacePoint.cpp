@@ -42,7 +42,7 @@ std::vector<Eigen::Vector3d> SurfacePoint::getFrictionCone(double halfAngle, int
       rMatrix = Eigen::AngleAxisd(_rotate,normal);
       frictionCone[i] = (rMatrix*frictionCone[0]);
       _rotate+=rotateStep;
-      frictionCone[i].normalize();
+//      frictionCone[i].normalize();
     }
     return frictionCone;
 }
