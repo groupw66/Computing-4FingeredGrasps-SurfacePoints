@@ -37,60 +37,38 @@ double ForceClosure::getMindist_Qhull(std::vector<Wrench> wrenchs)
 }
 
 
-inline Eigen::Vector3d perpendicular_vector(const Eigen::Vector3d &normal)
-{
-	// find perpendicular vector
-	Eigen::Vector3d perpendicular;
-	if(normal.x() ==0 ){
-		perpendicular = Eigen::Vector3d(0,-normal.z(),normal.y());
-	}
-	else if(normal.y() ==0 ){
-		perpendicular = Eigen::Vector3d(-normal.z(),0,normal.x());
-	}
-	else{
-		perpendicular = Eigen::Vector3d(-normal.y(),normal.x(),0);
-	}
-	perpendicular.normalize();
-	return perpendicular;
-}
-
-inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFunL1(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
+inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFunL1(const Eigen::Matrix<double,6,1> &u, const std::vector<SurfacePoint> &Gi, double uFriction)
 {
 	Eigen::Matrix<double,6,1> Spoint;
 	double Svalue = std::numeric_limits<double>::min();
-	for (const Eigen::Matrix<double,6,3> &G : Gi) {
-		Eigen::Vector3d di=G.transpose()*u;
-		double hui=hypot(di(1), di(2)), hw=uFriction*hui + di(0);
-		if (Svalue<hw) {
-			Svalue=hw;
-			double temp=hui>0?uFriction/hui:0.;
-			Eigen::Vector3d tmp;
-			tmp << 1., temp*di(1), temp*di(2);
-			Spoint=G*tmp;
+	for (const SurfacePoint &G : Gi) {
+		Eigen::Vector3d tran=u.topRows<3>() + u.bottomRows<3>().cross(G.position);
+		double c=tran.dot(G.normal), cand=c + uFriction*G.normal.cross(tran).norm();
+		if (Svalue<cand) {
+			Svalue=cand;
+			Spoint=Wrench(G.position, uFriction*((tran-c*G.normal).normalized()) + G.normal);
 		}
 	}
 	return std::pair<double, Eigen::Matrix<double,6,1> >(Svalue, Spoint);
 }
 
-inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFunLinf(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
+inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFunLinf(const Eigen::Matrix<double,6,1> &u, const std::vector<SurfacePoint> &Gi, double uFriction)
 {
-	Eigen::Matrix<double,6,1> Spoint;
-	double Svalue = std::numeric_limits<double>::min();
-	for (const Eigen::Matrix<double,6,3> &G : Gi) {
-		Eigen::Vector3d di=G.transpose()*u;
-		double hui=hypot(di(1), di(2)), hw=uFriction*hui + di(0);
-		if (hw>0) {
-			Svalue+=hw;
-			double temp=hui>0?uFriction/hui:0.;
-			Eigen::Vector3d tmp;
-			tmp << 1., temp*di(1), temp*di(2);
-			Spoint+=G*tmp;
+	Eigen::Matrix<double,6,1> Spoint=Eigen::Matrix<double,6,1>::Zero();
+	double Svalue = 0;
+	for (const SurfacePoint &G : Gi) {
+		Eigen::Vector3d tran=u.topRows<3>() + u.bottomRows<3>().cross(G.position);
+		double c=tran.dot(G.normal), cand=c + uFriction*G.normal.cross(tran).norm();
+		if (cand>0) {
+			Svalue+=cand;
+			Spoint+=Wrench(G.position, uFriction*((tran-c*G.normal).normalized()) + G.normal);
 		}
 	}
 	return std::pair<double, Eigen::Matrix<double,6,1> >(Svalue, Spoint);
 }
 
-inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFun(const Eigen::Matrix<double,6,1> &u, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction)
+
+inline std::pair<double, Eigen::Matrix<double,6,1> > SuppFun(const Eigen::Matrix<double,6,1> &u, const std::vector<SurfacePoint> &Gi, double uFriction)
 {
 	return SuppFunL1(u, Gi, uFriction);
 }
@@ -217,7 +195,7 @@ inline std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCSubAlgorithm(cons
 	return std::pair<Eigen::Matrix<double,6,1>, Eigen::MatrixXd>(r, subA);
 }
 
-inline std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorithm(const Eigen::Matrix<double,6,1> &b, const std::vector<Eigen::Matrix<double,6,3> > &Gi, double uFriction, double Tol)
+inline std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorithm(const Eigen::Matrix<double,6,1> &b, const std::vector<SurfacePoint> &Gi, double uFriction, double Tol)
 {
 	// This algorithm computes the minimum distance between a convex cone and a point 'b' (IEEE T-RO'09)
 	//	'd' --- the minimum distance
@@ -233,7 +211,7 @@ inline std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorith
 	std::tie(Svalue, Spoint) = SuppFun(r, Gi, uFriction);
 	while (Svalue > Tol){
 		A.conservativeResize(Eigen::NoChange, ++l);
-		A.rightCols(1)=Spoint;
+		A.rightCols<1>()=Spoint;
 //		Eigen::VectorXd c = (A.transpose()*A).inverse()*A.transpose()*b;
 		Eigen::VectorXd c = A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
 //		printf("minc: %lf\n",c.minCoeff());
@@ -262,60 +240,17 @@ inline std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd> ZCAlgorith
 	return std::tuple<double, Eigen::Matrix<double,6,1>, Eigen::MatrixXd>(d, r, A);
 }
 
-inline std::vector<Eigen::Matrix<double,6,3> > getG(SurfacePoint &sp1, SurfacePoint &sp2, SurfacePoint &sp3, SurfacePoint &sp4, const Eigen::Vector3d &cm){
-	// calculate Grasp Matrix
+bool ForceClosure::isFC_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4, Eigen::Vector3d cm, double halfAngle)
+{
 	sp1.position-=cm;
 	sp2.position-=cm;
 	sp3.position-=cm;
 	sp4.position-=cm;
+	std::vector<SurfacePoint> Gi{sp1,sp2,sp3,sp4};
 
-	std::vector<Eigen::Matrix<double,6,3> > Gi(4);
-	Eigen::Vector3d o,t;
-
-	o=perpendicular_vector(sp1.normal);
-	t=sp1.normal.cross(o);
-	Gi[0].block(0, 0, 3, 1)=sp1.normal;
-	Gi[0].block(3, 0, 3, 1)=sp1.position.cross(sp1.normal);
-	Gi[0].block(0, 1, 3, 1)=o;
-	Gi[0].block(3, 1, 3, 1)=sp1.position.cross(o);
-	Gi[0].block(0, 2, 3, 1)=t;
-	Gi[0].block(3, 2, 3, 1)=sp1.position.cross(t);
-
-	o=perpendicular_vector(sp2.normal);
-	t=sp2.normal.cross(o);
-	Gi[1].block(0, 0, 3, 1)=sp2.normal;
-	Gi[1].block(3, 0, 3, 1)=sp2.position.cross(sp2.normal);
-	Gi[1].block(0, 1, 3, 1)=o;
-	Gi[1].block(3, 1, 3, 1)=sp2.position.cross(o);
-	Gi[1].block(0, 2, 3, 1)=t;
-	Gi[1].block(3, 2, 3, 1)=sp2.position.cross(t);
-
-	o=perpendicular_vector(sp3.normal);
-	t=sp3.normal.cross(o);
-	Gi[2].block(0, 0, 3, 1)=sp3.normal;
-	Gi[2].block(3, 0, 3, 1)=sp3.position.cross(sp3.normal);
-	Gi[2].block(0, 1, 3, 1)=o;
-	Gi[2].block(3, 1, 3, 1)=sp3.position.cross(o);
-	Gi[2].block(0, 2, 3, 1)=t;
-	Gi[2].block(3, 2, 3, 1)=sp3.position.cross(t);
-
-	o=perpendicular_vector(sp4.normal);
-	t=sp4.normal.cross(o);
-	Gi[3].block(0, 0, 3, 1)=sp4.normal;
-	Gi[3].block(3, 0, 3, 1)=sp4.position.cross(sp4.normal);
-	Gi[3].block(0, 1, 3, 1)=o;
-	Gi[3].block(3, 1, 3, 1)=sp4.position.cross(o);
-	Gi[3].block(0, 2, 3, 1)=t;
-	Gi[3].block(3, 2, 3, 1)=sp4.position.cross(t);
-	return Gi;
-}
-
-bool ForceClosure::isFC_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4, Eigen::Vector3d cm, double halfAngle)
-{
-	std::vector<Eigen::Matrix<double,6,3> > Gi=getG(sp1,sp2,sp3,sp4,cm);
 	// force-closure test using the ZC distance algorithm (IEEE T-RO'09)
-	Eigen::Matrix<double,6,1> wc = -(Gi[0].col(0)+Gi[1].col(0)+Gi[2].col(0)+Gi[3].col(0))/4.;
-	double Tol=1e-7, d;
+	Eigen::Matrix<double,6,1> wc = -(Wrench(sp1.position,sp1.normal)+Wrench(sp2.position,sp2.normal)+Wrench(sp3.position,sp3.normal)+Wrench(sp4.position,sp4.normal))/4.;
+	double Tol=1e-8, d;
 	if (wc.norm() < Tol){
 		wc << 1,1,1,1,1,1;
 	}
@@ -328,10 +263,14 @@ bool ForceClosure::isFC_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3,
 
 double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePoint sp3, SurfacePoint sp4, Eigen::Vector3d cm, double halfAngle)
 {
-	std::vector<Eigen::Matrix<double,6,3> > Gi=getG(sp1,sp2,sp3,sp4,cm);
+	sp1.position-=cm;
+	sp2.position-=cm;
+	sp3.position-=cm;
+	sp4.position-=cm;
+	std::vector<SurfacePoint> Gi{sp1,sp2,sp3,sp4};
 	// force-closure test using the ZC distance algorithm (IEEE T-RO'09)
-	Eigen::Matrix<double,6,1> wc = -(Gi[0].col(0)+Gi[1].col(0)+Gi[2].col(0)+Gi[3].col(0))/4., r;
-	double Tol=1e-7, epsilon=1e-5, d;
+	Eigen::Matrix<double,6,1> wc = -(Wrench(sp1.position,sp1.normal)+Wrench(sp2.position,sp2.normal)+Wrench(sp3.position,sp3.normal)+Wrench(sp4.position,sp4.normal))/4., r;
+	double Tol=1e-8, epsilon=1e-5, d;
 	if (wc.norm() < Tol){
 		wc << 1,1,1,1,1,1;
 	}
@@ -352,7 +291,7 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 	primW[4]=A.col(3);
 	primW[5]=A.col(4);
 	primW[6]=A.col(5);
-//	primW.rightCols(6)=A;
+//	primW.rightCols<6>()=A;
 //	int num_primw = 7;   // number of found primitive wrenches
 //	Eigen::MatrixXi CH(6,7);   // facets, each column storing the vertex indices
 	std::vector<std::vector<int> > CH(7, std::vector<int>(6));
@@ -395,7 +334,7 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 			}
 		}
 
-		for (auto k = ids_facets_update.begin();k!=ids_facets_update.end();++k){
+		for (std::vector<int>::iterator k = ids_facets_update.begin();k!=ids_facets_update.end();++k){
 			std::vector<int> facet = CH[*k];
 			for (int j=0;j<6;++j){
 				std::vector<int> face;
@@ -406,11 +345,11 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 				}
 
 				// check if the face is a common face shared with any other facet
-				auto k2 = ids_facets_update.begin();
+				std::vector<int>::iterator k2 = ids_facets_update.begin();
 				for (;k2!=ids_facets_update.end();++k2){
 					if (k2 != k){
 						std::vector<int> facet2 = CH[*k2];
-						auto i1=face.begin(),i2=facet2.begin();
+						std::vector<int>::iterator i1=face.begin(),i2=facet2.begin();
 						while(i1!=face.end() && *i1==*i2){
 							++i1;
 							++i2;
@@ -450,7 +389,7 @@ double ForceClosure::getMindist_ZC(SurfacePoint sp1, SurfacePoint sp2, SurfacePo
 //		for (int i=0; i<rdis_facets.size(); ++i)
 //			printf("%lf ",rdis_facets[i]);
 //		printf("\n");
-		for(auto k=ids_facets_update.rbegin();k!=ids_facets_update.rend();++k){
+		for(std::vector<int>::reverse_iterator k=ids_facets_update.rbegin();k!=ids_facets_update.rend();++k){
 			CH.erase(CH.begin() + *k);
 			norm_facets.erase(norm_facets.begin() + *k);
 			rdis_facets.erase(rdis_facets.begin() + *k);
