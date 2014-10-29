@@ -582,71 +582,10 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
             }
         }
     }
-    else if(submode == "normalDist" || submode == "normalDist6"){
+    else if(submode.find("normalDist") == 0){ // submode start with "normalDist"
+        double sdDivider = atof(submode.substr(strlen("normalDist")).c_str());
         Eigen::Vector3d mean = Eigen::Vector3d(0,0,0),
-                        sd = (osp.maxAABB - osp.minAABB)/6;
-        std::normal_distribution<double> randNX(mean.x(), sd.x());
-        std::normal_distribution<double> randNY(mean.y(), sd.y());
-        std::normal_distribution<double> randNZ(mean.z(), sd.z());
-        //std::unordered_set<std::tuple<double,double,double> > uniquePoints;
-        tmr.reset();
-        while(tmr.elapsed() < timelimit){
-            Eigen::Vector3d sampledPoint = Eigen::Vector3d(randNX(rng), randNY(rng), randNZ(rng));
-            nTest++;
-            std::vector<unsigned int> filteredPointIds;
-            Compute4FingeredGrasps::pointInConesFilter(filteredPointIds, osp.surfacePoints, sampledPoint, halfAngle);
-
-            std::vector<Grasp> fcGrasps;
-            if(filteredPointIds.size() >= 4){
-                Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
-                                            fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
-            }
-            for(Grasp g : fcGrasps){
-                if(tmr.elapsed() >= timelimit)
-                    break;
-                if(!solsSet.insert(g.to_str()).second)
-                    continue;
-                double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[g[0]], osp.surfacePoints[g[1]],
-                                                         osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
-                                                         Eigen::Vector3d(0,0,0), halfAngle);
-                sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
-            }
-        }
-    }
-    else if(submode == "normalDist9"){
-        Eigen::Vector3d mean = Eigen::Vector3d(0,0,0),
-                        sd = (osp.maxAABB - osp.minAABB)/9;
-        std::normal_distribution<double> randNX(mean.x(), sd.x());
-        std::normal_distribution<double> randNY(mean.y(), sd.y());
-        std::normal_distribution<double> randNZ(mean.z(), sd.z());
-        //std::unordered_set<std::tuple<double,double,double> > uniquePoints;
-        tmr.reset();
-        while(tmr.elapsed() < timelimit){
-            Eigen::Vector3d sampledPoint = Eigen::Vector3d(randNX(rng), randNY(rng), randNZ(rng));
-            nTest++;
-            std::vector<unsigned int> filteredPointIds;
-            Compute4FingeredGrasps::pointInConesFilter(filteredPointIds, osp.surfacePoints, sampledPoint, halfAngle);
-
-            std::vector<Grasp> fcGrasps;
-            if(filteredPointIds.size() >= 4){
-                Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
-                                            fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
-            }
-            for(Grasp g : fcGrasps){
-                if(tmr.elapsed() >= timelimit)
-                    break;
-                if(!solsSet.insert(g.to_str()).second)
-                    continue;
-                double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[g[0]], osp.surfacePoints[g[1]],
-                                                         osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
-                                                         Eigen::Vector3d(0,0,0), halfAngle);
-                sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
-            }
-        }
-    }
-    else if(submode == "normalDist12"){
-        Eigen::Vector3d mean = Eigen::Vector3d(0,0,0),
-                        sd = (osp.maxAABB - osp.minAABB)/12;
+                        sd = (osp.maxAABB - osp.minAABB)/sdDivider;
         std::normal_distribution<double> randNX(mean.x(), sd.x());
         std::normal_distribution<double> randNY(mean.y(), sd.y());
         std::normal_distribution<double> randNZ(mean.z(), sd.z());
