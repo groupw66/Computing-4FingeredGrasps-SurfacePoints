@@ -11,6 +11,60 @@
 namespace
 {
 
+TEST(findEquilibriumGrasps_forceDual_solsSet)
+{
+    std::string objFilename = "test/meshes/KIT/CatLying_800.obj";
+    double timelimit = 500, halfAngle = 10.d;
+    ObjectSurfacePoints osp;
+    OBJFile obj(objFilename.c_str());
+    fflush(stdout);
+    osp.open(obj);
+    std::vector<std::tuple<double, Grasp, double> > sols, sols2;
+    std::unordered_set<std::string> solsSet, solsSet2;
+    int nTest = 0;
+    Timer tmr;
+    std::random_device rd;
+    std::default_random_engine rng(rd());
+    Eigen::Vector3d minAABB = osp.minAABB,
+                    maxAABB = osp.maxAABB;
+    std::uniform_real_distribution<double> randUX(minAABB.x(), maxAABB.x());
+    std::uniform_real_distribution<double> randUY(minAABB.y(), maxAABB.y());
+    std::uniform_real_distribution<double> randUZ(minAABB.z(), maxAABB.z());
+    //std::unordered_set<std::tuple<double,double,double> > uniquePoints;
+    tmr.reset();
+    while(std::min(sols.size(), sols2.size()) < 500){
+        printf("- %lf \n",tmr.elapsed());
+        Eigen::Vector3d sampledPoint = Eigen::Vector3d(randUX(rng), randUY(rng), randUZ(rng));
+        nTest++;
+        std::vector<unsigned int> filteredPointIds;
+        Compute4FingeredGrasps::pointInConesFilter(filteredPointIds, osp.surfacePoints, sampledPoint, halfAngle);
+
+        std::vector<Grasp> fcGrasps;
+        if(filteredPointIds.size() >= 4){
+            Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
+                                        fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
+            Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
+                                        sols2, solsSet2, tmr, timelimit, halfAngle,
+                                        filteredPointIds, sampledPoint, osp.surfacePoints);
+        }
+        for(Grasp g : fcGrasps){
+            if(tmr.elapsed() >= timelimit)
+                break;
+            if(!solsSet.insert(g.to_str()).second)
+                continue;
+            double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[g[0]], osp.surfacePoints[g[1]],
+                                                     osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
+                                                     Eigen::Vector3d(0,0,0), halfAngle);
+            sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
+        }
+    }
+    printf("size: %d %d\n",sols.size(), sols2.size() );
+    CHECK_EQUAL(sols.size(), sols2.size());
+    for(int i = 0 ; i < sols.size() ; ++i){
+        CHECK_CLOSE(std::get<0>(sols[i]), std::get<0>(sols2[i]),1e-6);
+    }
+}
+
 inline void test_uniformAxis(ObjectSurfacePoints &osp, int npointsPerAxis, double halfAngle, int nUniqueSol)
 {
     Timer tmr;

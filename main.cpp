@@ -568,8 +568,10 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
             std::vector<Grasp> fcGrasps;
             if(filteredPointIds.size() >= 4){
                 Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
-                                            fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
+                                            sols, solsSet, tmr, timelimit, halfAngle,
+                                            filteredPointIds, sampledPoint, osp.surfacePoints);
             }
+            /*
             for(Grasp g : fcGrasps){
                 if(tmr.elapsed() >= timelimit)
                     break;
@@ -579,7 +581,7 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
                                                          osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
                                                          Eigen::Vector3d(0,0,0), halfAngle);
                 sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
-            }
+            }*/
         }
     }
     else if(submode.find("normalDist") == 0){ // submode start with "normalDist"
@@ -600,8 +602,10 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
             std::vector<Grasp> fcGrasps;
             if(filteredPointIds.size() >= 4){
                 Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
-                                            fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
+                                            sols, solsSet, tmr, timelimit, halfAngle,
+                                            filteredPointIds, sampledPoint, osp.surfacePoints);
             }
+            /*
             for(Grasp g : fcGrasps){
                 if(tmr.elapsed() >= timelimit)
                     break;
@@ -611,7 +615,7 @@ void runCompute4FingeredGraspsFixtime(std::string submode, std::string objFilena
                                                          osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
                                                          Eigen::Vector3d(0,0,0), halfAngle);
                 sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
-            }
+            }*/
         }
     }
     else{
