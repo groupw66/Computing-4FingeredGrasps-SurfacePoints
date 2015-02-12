@@ -27,12 +27,15 @@ namespace Compute4FingeredGrasps
 
     // using orthogonal range search with fractional cascading in force dual representation
 	// O(n^3 (logn + K))
-    void findEquilibriumGrasps_forceDual(std::vector<Grasp>  &sol, const std::vector<unsigned int> &M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);
+    void findEquilibriumGrasps_forceDual(std::vector<Grasp>  &sol, const std::vector<unsigned int> &M,
+                                         Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);
 
-    void findEquilibriumGrasps_forceDual(std::vector<std::tuple<double, Grasp, double> > &sols,
+    void findEquilibriumGrasps_forceDual(std::vector<std::tuple<Grasp, double, double> > &sols,
                                          std::unordered_set<std::string> &solsSet,
+                                         bool isMindist, bool isUniquesol,
                                          Timer &tmr, double timelimit, double halfAngle,
-                                         const std::vector<unsigned int> &M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);
+                                         const std::vector<unsigned int> &M, Eigen::Vector3d samplePoint,
+                                         std::vector<SurfacePoint> surfacePoints);
 
     // O(n^4)
     void findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<unsigned int>& M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);

@@ -19,7 +19,7 @@ TEST(findEquilibriumGrasps_forceDual_solsSet)
     OBJFile obj(objFilename.c_str());
     fflush(stdout);
     osp.open(obj);
-    std::vector<std::tuple<double, Grasp, double> > sols, sols2;
+    std::vector<std::tuple<Grasp, double, double> > sols, sols2;
     std::unordered_set<std::string> solsSet, solsSet2;
     int nTest = 0;
     Timer tmr;
@@ -44,7 +44,7 @@ TEST(findEquilibriumGrasps_forceDual_solsSet)
             Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
                                         fcGrasps, filteredPointIds, sampledPoint, osp.surfacePoints);
             Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
-                                        sols2, solsSet2, tmr, timelimit, halfAngle,
+                                        sols2, solsSet2, true, true, tmr, timelimit, halfAngle,
                                         filteredPointIds, sampledPoint, osp.surfacePoints);
         }
         for(Grasp g : fcGrasps){
@@ -55,13 +55,13 @@ TEST(findEquilibriumGrasps_forceDual_solsSet)
             double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[g[0]], osp.surfacePoints[g[1]],
                                                      osp.surfacePoints[g[2]], osp.surfacePoints[g[3]],
                                                      Eigen::Vector3d(0,0,0), halfAngle);
-            sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
+            sols.push_back(std::make_tuple(g, tmr.elapsed(), mindist));
         }
     }
-    printf("size: %d %d\n",sols.size(), sols2.size() );
+    printf("size: %lu %lu\n",sols.size(), sols2.size() );
     CHECK_EQUAL(sols.size(), sols2.size());
-    for(int i = 0 ; i < sols.size() ; ++i){
-        CHECK_CLOSE(std::get<0>(sols[i]), std::get<0>(sols2[i]),1e-6);
+    for(unsigned int i = 0 ; i < sols.size() ; ++i){
+        CHECK_CLOSE(std::get<2>(sols[i]), std::get<2>(sols2[i]),1e-6);
     }
 }
 

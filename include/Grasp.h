@@ -28,9 +28,12 @@ class Grasp
         }
 
         inline const char* to_str() const {
-            std::stringstream ss;
+            /*std::stringstream ss;
             ss << (*this)[0] << " " << (*this)[1] << " " << (*this)[2] << " " << (*this)[3] ;
-            return ss.str().c_str();
+            return ss.str().c_str();*/
+            char* str = (char*)malloc(20);
+            sprintf(str, "%d %d %d %d",(*this)[0],(*this)[1],(*this)[2],(*this)[3]);
+            return str;
         }
 
     protected:

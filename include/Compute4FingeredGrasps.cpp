@@ -148,12 +148,14 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<Grasp>&
 				}
 			}
 			//printf("%d %d %d\n",lnrn,lnlp,rnrp);
-
 		}
 	}
 }
 
-void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<std::tuple<double, Grasp, double> >& sols, std::unordered_set<std::string>& solsSet, Timer& tmr, double timelimit, double halfAngle, const std::vector<unsigned int>& M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints)
+void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
+        std::vector<std::tuple<Grasp, double, double> >& sols, std::unordered_set<std::string>& solsSet,
+        bool isMindist, bool isUniquesol, Timer& tmr, double timelimit, double halfAngle,
+        const std::vector<unsigned int>& M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints)
 {
     //fcGrasps.clear();
 	RangeTree2D PRN,
@@ -167,6 +169,7 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<std::tu
 		for(unsigned int j=i+1 ; j < vectorInwards.size() ; ++j){
             if(tmr.elapsed() >= timelimit)
                 break;
+			tmr.start("make range tree");
 			std::vector<int> VLNId,VLPId,VRNId,VRPId,VLZId,VRZId;
 			std::vector<Eigen::Vector2d> VLP,VRN,VRP,fdrAngles;
 			fdrAngles.reserve(vectorInwards.size()-j-1);
@@ -210,6 +213,9 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<std::tu
 			PRN.init(VRN);
 			PLP.init(VLP);
 			PRP.init(VRP);
+			tmr.pause("make range tree");
+
+			tmr.start("points pairing");
 			int lnrn = 0,
                 lnlp = 0,
                 rnrp = 0;
@@ -217,30 +223,50 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<std::tu
 				// Negative-Negative Dual Points Pairing
 				for(int l : PRN.queryId(0,0, M_PI-fdrAngles[id].x(), M_PI-fdrAngles[id].y())){
                     Grasp g(M[i], M[j], M[j+1+id], M[j+1+VRNId[l]]);
-                    if(!solsSet.insert(g.to_str()).second)
-                        continue;
-                    double mindist = ForceClosure::getMindist_ZC(surfacePoints[g[0]], surfacePoints[g[1]],
+                    if(isUniquesol){
+                        tmr.start("unique sol check");
+                        bool isUnique = solsSet.insert(g.to_str()).second;
+                        tmr.pause("unique sol check");
+                        if(!isUnique){
+                            continue;
+                        }
+                    }
+                    double mindist = -1;
+                    if(isMindist){
+                        tmr.start("compute mindist");
+                        mindist = ForceClosure::getMindist_ZC(surfacePoints[g[0]], surfacePoints[g[1]],
                                                              surfacePoints[g[2]], surfacePoints[g[3]],
                                                              Eigen::Vector3d(0,0,0), halfAngle);
+                        tmr.pause("compute mindist");
+                    }
                     if(tmr.elapsed() >= timelimit)
                         break;
-                    sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
-                    //sols.push_back(Grasp(M[i], M[j], M[j+1+id], M[j+1+VRNId[l]]));
+                    sols.push_back(std::make_tuple(g, tmr.elapsed(), mindist));
 					++lnrn;
 				}
 				// Negative-Positive Dual Points Pairing
 				// Left_Negative / Left_Positive
 				for(int l : PLP.queryId(fdrAngles[id].x(), fdrAngles[id].y(), M_PI,M_PI)){
                     Grasp g(M[i], M[j], M[j+1+id], M[j+1+VLPId[l]]);
-                    if(!solsSet.insert(g.to_str()).second)
-                        continue;
-                    double mindist = ForceClosure::getMindist_ZC(surfacePoints[g[0]], surfacePoints[g[1]],
+                    if(isUniquesol){
+                        tmr.start("unique sol check");
+                        bool isUnique = solsSet.insert(g.to_str()).second;
+                        tmr.pause("unique sol check");
+                        if(!isUnique){
+                            continue;
+                        }
+                    }
+                    double mindist = -1;
+                    if(isMindist){
+                        tmr.start("compute mindist");
+                        mindist = ForceClosure::getMindist_ZC(surfacePoints[g[0]], surfacePoints[g[1]],
                                                              surfacePoints[g[2]], surfacePoints[g[3]],
                                                              Eigen::Vector3d(0,0,0), halfAngle);
+                        tmr.pause("compute mindist");
+                    }
                     if(tmr.elapsed() >= timelimit)
                         break;
-                    sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
-                    //sols.push_back(Grasp(M[i], M[j], M[j+1+id], M[j+1+VLPId[l]]));
+                    sols.push_back(std::make_tuple(g, tmr.elapsed(), mindist));
 					++lnlp;
 				}
 			}
@@ -253,24 +279,33 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(std::vector<std::tu
 			for(int id : VRNId){
 				for(int l : PRP.queryId(fdrAngles[id].x(), fdrAngles[id].y(), M_PI,M_PI)){
 					Grasp g(M[i], M[j], M[j+1+id], M[j+1+VRPId[l]]);
-                    if(!solsSet.insert(g.to_str()).second)
-                        continue;
-                    double mindist = ForceClosure::getMindist_ZC(surfacePoints[g[0]], surfacePoints[g[1]],
+                    if(isUniquesol){
+                        tmr.start("unique sol check");
+                        bool isUnique = solsSet.insert(g.to_str()).second;
+                        tmr.pause("unique sol check");
+                        if(!isUnique){
+                            continue;
+                        }
+                    }
+                    double mindist = -1;
+                    if(isMindist){
+                        tmr.start("compute mindist");
+                        mindist = ForceClosure::getMindist_ZC(surfacePoints[g[0]], surfacePoints[g[1]],
                                                              surfacePoints[g[2]], surfacePoints[g[3]],
                                                              Eigen::Vector3d(0,0,0), halfAngle);
+                        tmr.pause("compute mindist");
+                    }
                     if(tmr.elapsed() >= timelimit)
                         break;
-                    sols.push_back(std::make_tuple(mindist, g, tmr.elapsed()));
-                    //sols.push_back(Grasp(M[i], M[j], M[j+1+id], M[j+1+VRPId[l]]));
+                    sols.push_back(std::make_tuple(g, tmr.elapsed(), mindist));
 					++rnrp;
 				}
 			}
 			//printf("%d %d %d\n",lnrn,lnlp,rnrp);
-
+			tmr.pause("points pairing");
 		}
 	}
 }
-
 
 void Compute4FingeredGrasps::findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<unsigned int>& M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints)
 {
