@@ -217,8 +217,8 @@ void graspSynthesis(int argc,char *argv[])
     Timer tmr;
     std::random_device rd;
     std::default_random_engine rng(rd());
-    int nTestedPoint = 0;
-    int nSols = 0;
+    long long nTestedPoint = 0;
+    long long nSols = 0;
     std::unordered_set<std::string> solsSet;
     solsSet.reserve(1000000);
     std::vector<std::tuple<Grasp, double, double> > sols;
