@@ -17,25 +17,43 @@ public:
         return std::chrono::duration_cast<second_>
             (clock_::now() - beg_).count(); }
     void reset(std::string key) {
-        stopwatch[key].second = 0.d;
-    }void start(std::string key) {
+        std::get<1>(stopwatch[key]) = 0.d;
+        std::get<2>(stopwatch[key]) = 0.d;
+        start(key);
+    }
+    void start(std::string key) {
         if(stopwatch.find(key) == stopwatch.end()){
             reset(key);
         }
-        stopwatch[key].first = clock_::now();
+        std::get<0>(stopwatch[key]) = clock_::now();
     }
     double pause(std::string key) {
         if(stopwatch.find(key) == stopwatch.end()){
             reset(key);
         }
         else {
-            stopwatch[key].second += std::chrono::duration_cast<second_>
-                (clock_::now() - stopwatch[key].first).count();
+            std::get<2>(stopwatch[key]) = std::chrono::duration_cast<second_>
+                (clock_::now() - std::get<0>(stopwatch[key])).count();
+            std::get<1>(stopwatch[key]) += std::get<2>(stopwatch[key]);
         }
         return getSec(key);
     }
     double getSec(std::string key) {
-        return stopwatch[key].second;
+        if(stopwatch.find(key) == stopwatch.end()){
+            return 0.;
+        }
+        return std::get<1>(stopwatch[key]);
+    }
+    double getSecLastLap(std::string key) {
+        if(stopwatch.find(key) == stopwatch.end()){
+            return 0.;
+        }
+        return std::get<2>(stopwatch[key]);
+    }
+    double remove(std::string key){
+        double tmp = pause(key);
+        stopwatch.erase(key);
+        return tmp;
     }
     const char* strStopwatch(){
         /*std::stringstream ss;
@@ -57,7 +75,7 @@ private:
     typedef std::chrono::high_resolution_clock clock_;
     typedef std::chrono::duration<double, std::ratio<1> > second_;
     std::chrono::time_point<clock_> beg_;
-    std::unordered_map<std::string, std::pair<std::chrono::time_point<clock_>, double > > stopwatch;
+    std::unordered_map<std::string, std::tuple<std::chrono::time_point<clock_>, double, double > > stopwatch;
 };
 
 

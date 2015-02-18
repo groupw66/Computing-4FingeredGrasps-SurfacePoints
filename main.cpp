@@ -224,6 +224,8 @@ void graspSynthesis(int argc,char *argv[])
     concurrentPoints.reserve(200000);
     std::vector<std::vector<std::tuple<Grasp, double, double> > > concurrentSols;
     concurrentPoints.reserve(200000);
+    std::vector<std::tuple<double, double, double, double, double> > concurrentPointTimes;
+    concurrentPointTimes.reserve(200000);
 
     tmr.start("all");
     if(isConcurrent){
@@ -265,6 +267,8 @@ void graspSynthesis(int argc,char *argv[])
                 concurrentPoint += Eigen::Vector3d(rerandNX(rng), rerandNY(rng), rerandNZ(rng));
             }
 
+            tmr.start("one iterate");
+
             nTestedPoint++;
             concurrentSols.resize(nTestedPoint);
             concurrentSols[nTestedPoint-1].reserve(50000);
@@ -274,15 +278,19 @@ void graspSynthesis(int argc,char *argv[])
             Compute4FingeredGrasps::pointInConesFilter(filteredPointIds, osp.surfacePoints, concurrentPoint, halfangle);
             tmr.pause("pointInConesFilter");
 
-            tmr.start("findEquilibriumGrasps_forceDual");
+            tmr.start("findEquilibriumGrasps");
             if(filteredPointIds.size() >= 4){
                 Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
                                             concurrentSols[nTestedPoint-1], solsSet,
                                             isMindist, isUniquesol, tmr, timelimit, halfangle,
                                             filteredPointIds, concurrentPoint, osp.surfacePoints);
             }
-            tmr.pause("findEquilibriumGrasps_forceDual");
+            tmr.pause("findEquilibriumGrasps");
+            tmr.pause("one iterate");
             concurrentPoints.push_back(std::make_tuple(concurrentPoint, filteredPointIds.size(), concurrentSols[nTestedPoint-1].size()));
+            concurrentPointTimes.push_back(std::make_tuple(tmr.getSecLastLap("one iterate"),
+                tmr.getSecLastLap("pointInConesFilter"), tmr.getSecLastLap("findEquilibriumGrasps"),
+                tmr.getSecLastLap("make range tree"), tmr.getSecLastLap("points pairing")));
             nSols += concurrentSols[nTestedPoint-1].size();
             if(isNosol){
                 concurrentSols[nTestedPoint-1].clear();
@@ -290,13 +298,17 @@ void graspSynthesis(int argc,char *argv[])
             concurrentSols[nTestedPoint-1].shrink_to_fit();
         }
         //write output
-        outFile << nSols << " " << nTestedPoint << "\n";
+        outFile << "nSols " << nSols << "\n";
+        outFile << "nTestedPoint " << nTestedPoint << "\n";
         for(unsigned int i=0 ; i<concurrentPoints.size() ; ++i){
             auto conPoint = concurrentPoints[i];
-            outFile << std::get<0>(conPoint).x() << " " << std::get<0>(conPoint).y() << " " << std::get<0>(conPoint).z() << " "
+            auto conPointTime = concurrentPointTimes[i];
+            outFile << "cp " << std::get<0>(conPoint).x() << " " << std::get<0>(conPoint).y() << " " << std::get<0>(conPoint).z() << " "
                     << std::get<1>(conPoint) << " " << std::get<2>(conPoint) << "\n";
+            outFile << "cpTime " << std::get<0>(conPointTime) << " " << std::get<1>(conPointTime) << " "
+                    << std::get<2>(conPointTime) << " " << std::get<3>(conPointTime) << " " << std::get<4>(conPointTime) << "\n";
             for(auto sol : concurrentSols[i]){
-                outFile << std::get<0>(sol).to_str() << " " << std::get<1>(sol) << " " << std::get<2>(sol) << "\n";
+                outFile << "g " << std::get<0>(sol).to_str() << " " << std::get<2>(sol) << " " << std::get<1>(sol) << "\n";
             }
         }
 
@@ -348,9 +360,10 @@ void graspSynthesis(int argc,char *argv[])
         }
         nSols = sols.size();
         //write output
-        outFile << nSols << " " << nTestedPoint << "\n";
+        outFile << "nSols " << nSols << "\n";
+        outFile << "nTestedPoint " << nTestedPoint << "\n";
         for(auto sol : sols){
-            outFile << std::get<0>(sol).to_str() << " " << std::get<1>(sol) << " " << std::get<2>(sol) << "\n";
+            outFile << "g " << std::get<0>(sol).to_str() << " " << std::get<2>(sol) << " " << std::get<1>(sol) << "\n";
         }
     }
     std::cout << filename << std::endl;
