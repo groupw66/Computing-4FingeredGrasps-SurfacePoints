@@ -189,15 +189,18 @@ void graspSynthesis(int argc,char *argv[])
     bool isStep = cmdOptionExists(argv, argv+argc, "-step");
     int nStepPoints = 1000;
     if(isStep) nStepPoints = atoi(getCmdOption(argv, argv + argc, "-step"));
-    Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
+    bool isSizeAABB = cmdOptionExists(argv, argv+argc, "-sizeAABB");
+    double sizeAABB = 1.0;
+    if(isSizeAABB) sizeAABB = atof(getCmdOption(argv, argv + argc, "-sizeAABB"));
+    Eigen::Vector3d startStepPoint = osp.minAABB + (osp.minAABB-osp.cm)*(sizeAABB-1.);
+    Eigen::Vector3d endStepPoint = osp.maxAABB + (osp.maxAABB-osp.cm)*(sizeAABB-1.);
+    Eigen::Vector3d diffAABB = endStepPoint - startStepPoint;
     double volumnAABB = fabs(diffAABB.x() * diffAABB.y() * diffAABB.z());
     double stepLength = pow(volumnAABB/nStepPoints, 1.d/3.d);
-    Eigen::Vector3d startStepPoint = osp.minAABB;
-    Eigen::Vector3d endStepPoint = osp.maxAABB;
     bool isStepB = cmdOptionExists(argv, argv+argc, "-stepb");
     if(isStepB){
-        startStepPoint = osp.minAABB - Eigen::Vector3d(stepLength/2, stepLength/2, stepLength/2);
-        endStepPoint = osp.maxAABB + Eigen::Vector3d(stepLength/2, stepLength/2, stepLength/2);
+        startStepPoint -= Eigen::Vector3d(stepLength/2, stepLength/2, stepLength/2);
+        endStepPoint += Eigen::Vector3d(stepLength/2, stepLength/2, stepLength/2);
     }
     Eigen::Vector3d currentStepPoint = startStepPoint;
 
