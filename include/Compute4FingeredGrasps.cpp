@@ -324,6 +324,45 @@ void Compute4FingeredGrasps::findEquilibriumGrasps_naive(std::vector<Grasp>  &so
     }
 }
 
+void Compute4FingeredGrasps::findEquilibriumGrasps_naive(std::vector<std::tuple<Grasp, double, double> > &sols,
+                                     std::unordered_set<std::string> &solsSet,
+                                     bool isMindist, bool isUniquesol,
+                                     Timer &tmr, double timelimit, double halfAngle,
+                                     const std::vector<unsigned int> &M, Eigen::Vector3d samplePoint,
+                                     std::vector<SurfacePoint> surfacePoints)
+{
+    for(unsigned int a=0 ; a < M.size() ; ++a){
+        for(unsigned int b=a+1 ; b < M.size() ; ++b){
+            for(unsigned int c=b+1 ; c < M.size() ; ++c){
+                for(unsigned int d=c+1 ; d < M.size() ; ++d){
+                    Grasp g(M[a], M[b], M[c], M[d]);
+                    if(isEquilibriumGrasp(g, samplePoint, surfacePoints)){
+                        if(isUniquesol){
+                            tmr.start("unique sol check");
+                            bool isUnique = solsSet.insert(g.to_str()).second;
+                            tmr.pause("unique sol check");
+                            if(!isUnique){
+                                continue;
+                            }
+                        }
+                        double mindist = -1;
+                        if(isMindist){
+                            tmr.start("compute mindist");
+                            mindist = ForceClosure::getMindist_ZC(surfacePoints[g[0]], surfacePoints[g[1]],
+                                                                 surfacePoints[g[2]], surfacePoints[g[3]],
+                                                                 Eigen::Vector3d(0,0,0), halfAngle);
+                            tmr.pause("compute mindist");
+                        }
+                        if(tmr.elapsed() >= timelimit)
+                            break;
+                        sols.push_back(std::make_tuple(g, tmr.elapsed(), mindist));
+                    }
+                }
+            }
+        }
+    }
+}
+
 bool Compute4FingeredGrasps::isEquilibriumGrasp(Grasp grasp, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints)
 {
     std::vector<Eigen::Vector3d> vectorInwards;

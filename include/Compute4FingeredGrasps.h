@@ -38,7 +38,15 @@ namespace Compute4FingeredGrasps
                                          std::vector<SurfacePoint> surfacePoints);
 
     // O(n^4)
-    void findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<unsigned int>& M, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);
+    void findEquilibriumGrasps_naive(std::vector<Grasp>  &sol, const std::vector<unsigned int>& M,
+                                     Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);
+
+    void findEquilibriumGrasps_naive(std::vector<std::tuple<Grasp, double, double> > &sols,
+                                     std::unordered_set<std::string> &solsSet,
+                                     bool isMindist, bool isUniquesol,
+                                     Timer &tmr, double timelimit, double halfAngle,
+                                     const std::vector<unsigned int> &M, Eigen::Vector3d samplePoint,
+                                     std::vector<SurfacePoint> surfacePoints);
 
     bool isEquilibriumGrasp(Grasp grasp, Eigen::Vector3d samplePoint, std::vector<SurfacePoint> surfacePoints);
 

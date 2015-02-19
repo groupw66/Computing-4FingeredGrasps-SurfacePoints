@@ -143,6 +143,9 @@ void graspSynthesis(int argc,char *argv[])
     //-concurrent
     bool isConcurrent = cmdOptionExists(argv, argv+argc, "-concurrent");
 
+    //-naiveeenumerate
+    bool isNaiveeenumerate = cmdOptionExists(argv, argv+argc, "-naiveeenumerate");
+
     //-uniform
     bool isUniform = cmdOptionExists(argv, argv+argc, "-uniform");
     std::uniform_real_distribution<double> randUX(osp.minAABB.x(), osp.maxAABB.x());
@@ -283,10 +286,18 @@ void graspSynthesis(int argc,char *argv[])
 
             tmr.start("findEquilibriumGrasps");
             if(filteredPointIds.size() >= 4){
-                Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
+                if(isNaiveeenumerate){
+                    Compute4FingeredGrasps::findEquilibriumGrasps_naive(
                                             concurrentSols[nTestedPoint-1], solsSet,
                                             isMindist, isUniquesol, tmr, timelimit, halfangle,
                                             filteredPointIds, concurrentPoint, osp.surfacePoints);
+                }
+                else{
+                    Compute4FingeredGrasps::findEquilibriumGrasps_forceDual(
+                                            concurrentSols[nTestedPoint-1], solsSet,
+                                            isMindist, isUniquesol, tmr, timelimit, halfangle,
+                                            filteredPointIds, concurrentPoint, osp.surfacePoints);
+                }
             }
             tmr.pause("findEquilibriumGrasps");
             tmr.pause("one iterate");
