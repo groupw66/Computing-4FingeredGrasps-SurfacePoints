@@ -56,6 +56,8 @@
 		<Unit filename="include/ForceClosure.h" />
 		<Unit filename="include/Grasp.cpp" />
 		<Unit filename="include/Grasp.h" />
+		<Unit filename="include/MedialAxis.cpp" />
+		<Unit filename="include/MedialAxis.h" />
 		<Unit filename="include/NaiveNN3D.cpp" />
 		<Unit filename="include/NaiveNN3D.h" />
 		<Unit filename="include/OBJFile.cpp" />
@@ -93,6 +95,7 @@
 		<Unit filename="test/TestFlann3d.cpp" />
 		<Unit filename="test/TestForceClosure.cpp" />
 		<Unit filename="test/TestGrasp.cpp" />
+		<Unit filename="test/TestMedialAxis.cpp" />
 		<Unit filename="test/TestOBJFile.cpp" />
 		<Unit filename="test/TestObjectSurfacePoints.cpp" />
 		<Unit filename="test/TestPositionsNormalsFile.cpp" />
