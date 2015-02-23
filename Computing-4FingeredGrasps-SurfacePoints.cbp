@@ -50,10 +50,14 @@
 		<Unit filename="include/BasicGeometry.hpp" />
 		<Unit filename="include/Compute4FingeredGrasps.cpp" />
 		<Unit filename="include/Compute4FingeredGrasps.h" />
+		<Unit filename="include/Flann3D.cpp" />
+		<Unit filename="include/Flann3D.h" />
 		<Unit filename="include/ForceClosure.cpp" />
 		<Unit filename="include/ForceClosure.h" />
 		<Unit filename="include/Grasp.cpp" />
 		<Unit filename="include/Grasp.h" />
+		<Unit filename="include/NaiveNN3D.cpp" />
+		<Unit filename="include/NaiveNN3D.h" />
 		<Unit filename="include/OBJFile.cpp" />
 		<Unit filename="include/OBJFile.h" />
 		<Unit filename="include/ObjectSurfacePoints.cpp" />
@@ -86,6 +90,7 @@
 		<Unit filename="main.cpp" />
 		<Unit filename="test/TestBasicGeometry.cpp" />
 		<Unit filename="test/TestCompute4FingeredGrasps.cpp" />
+		<Unit filename="test/TestFlann3d.cpp" />
 		<Unit filename="test/TestForceClosure.cpp" />
 		<Unit filename="test/TestGrasp.cpp" />
 		<Unit filename="test/TestOBJFile.cpp" />
