@@ -60,6 +60,7 @@
 		<Unit filename="include/MedialAxis.h" />
 		<Unit filename="include/NaiveNN3D.cpp" />
 		<Unit filename="include/NaiveNN3D.h" />
+		<Unit filename="include/NearestNeighbor.h" />
 		<Unit filename="include/OBJFile.cpp" />
 		<Unit filename="include/OBJFile.h" />
 		<Unit filename="include/ObjectSurfacePoints.cpp" />
@@ -91,10 +92,7 @@
 		<Unit filename="include/dae/mVect.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="test/TestBasicGeometry.cpp" />
-		<Unit filename="test/TestCompute4FingeredGrasps.cpp" />
 		<Unit filename="test/TestFlann3d.cpp" />
-		<Unit filename="test/TestForceClosure.cpp" />
-		<Unit filename="test/TestGrasp.cpp" />
 		<Unit filename="test/TestMedialAxis.cpp" />
 		<Unit filename="test/TestOBJFile.cpp" />
 		<Unit filename="test/TestObjectSurfacePoints.cpp" />

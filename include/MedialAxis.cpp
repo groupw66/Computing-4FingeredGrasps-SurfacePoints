@@ -10,12 +10,7 @@ MedialAxis::~MedialAxis()
     //dtor
 }
 
-MedialAxis::MedialAxis(ObjectSurfacePoints _osp)
-{
-    setObject(_osp);
-}
-
-int MedialAxis::setObject(ObjectSurfacePoints _osp)
+int MedialAxis::setObject(ObjectSurfacePoints _osp, int nnMode)
 {
     positions.clear();
     normals.clear();
@@ -25,7 +20,15 @@ int MedialAxis::setObject(ObjectSurfacePoints _osp)
     }
     positions.shrink_to_fit();
     normals.shrink_to_fit();
-    flann3D.initPoints(positions);
+    if(nnMode == 2){
+        naiveNN3D.initPoints(positions);
+        nn3D = &naiveNN3D;
+    }
+    else{
+        flann3D.initPoints(positions);
+        nn3D = &flann3D;
+    }
+
     return 0;
 }
 
@@ -36,7 +39,8 @@ double MedialAxis::computeRadius(Eigen::Vector3d pA, Eigen::Vector3d nA, Eigen::
     return dist*dist / ( 2 * nA.dot(vectorBA) );
 }
 
-int MedialAxis::genMedialPoint(std::tuple<Eigen::Vector3d, double, double>& medialPoint, Eigen::Vector3d &pointB, int iA, int iB)
+int MedialAxis::genMedialPoint(std::tuple<Eigen::Vector3d, double, double>& medialPoint, Eigen::Vector3d &pointB,
+                               int iA, int iB, int randBMode, double minradius)
 {
     std::uniform_int_distribution<int> randInt(0,positions.size()-1);
     std::random_device rd;
@@ -44,24 +48,26 @@ int MedialAxis::genMedialPoint(std::tuple<Eigen::Vector3d, double, double>& medi
     if(iA < 0){
         iA = randInt(rng);
     }
-    if(iB < 0){
-        iB = iA;
-        while(iA == iB)
-            iB = randInt(rng);
+    while(iB<0 || iB==iA ||
+          (randBMode==1 && normals[iA].dot(positions[iA]-positions[iB]) >= 0) ||
+          (randBMode==-1 && normals[iA].dot(positions[iA]-positions[iB]) <= 0)
+          ){
+        iB = randInt(rng);
     }
-    if(iA >= positions.size() || iB >= positions.size()){
+    if((unsigned int)iA >= positions.size() || (unsigned int)iB >= positions.size()){
         return -1;
     }
     Eigen::Vector3d pA = positions[iA];
     Eigen::Vector3d nA = normals[iA];
     Eigen::Vector3d pB = positions[iB];
-    return genMedialPoint(medialPoint, pointB, pA, nA, pB);
+    return genMedialPoint(medialPoint, pointB, pA, nA, pB, minradius);
 }
 
-int MedialAxis::genMedialPoint(std::tuple<Eigen::Vector3d, double, double>& medialPoint, Eigen::Vector3d &pointB, Eigen::Vector3d pA_, Eigen::Vector3d nA_, Eigen::Vector3d pB_)
+int MedialAxis::genMedialPoint(std::tuple<Eigen::Vector3d, double, double>& medialPoint, Eigen::Vector3d &pointB,
+                               Eigen::Vector3d pA_, Eigen::Vector3d nA_, Eigen::Vector3d pB_, double minradius)
 {
     Eigen::Vector3d pA = pA_;
-    Eigen::Vector3d nA = nA_.normalized();
+    Eigen::Vector3d nA = -nA_.normalized();
     Eigen::Vector3d pB = pB_;
     Eigen::Vector3d pM;
     double radius, radius0;
@@ -69,20 +75,21 @@ int MedialAxis::genMedialPoint(std::tuple<Eigen::Vector3d, double, double>& medi
     do{
         pM = pA - nA*radius;
 
-        std::vector< std::pair<Eigen::Vector3d, double> > nnPoints;
-        flann3D.knnSearch(pM, nnPoints, 2);
-        double dist;
-        if(nnPoints[0].first != pA){
-            pB = nnPoints[0].first;
-            dist = nnPoints[0].second;
+        std::vector< std::tuple<Eigen::Vector3d, int, double> > nnPoints;
+        std::vector< std::pair<Eigen::Vector3d, double> > nnPoints2;
+        nn3D->knnSearch(pM, nnPoints, 2);
+        if(std::get<0>(nnPoints[0]) != pA){
+            pB = std::get<0>(nnPoints[0]);
         }
         else{
-            pB = nnPoints[1].first;
-            dist = nnPoints[1].second;
+            pB = std::get<0>(nnPoints[1]);
         }
 
         radius0 = radius;
         radius = computeRadius(pA, nA, pB);
+        if(radius < minradius){
+            return -1;
+        }
     }while(!(radius < radius0+0.000001 && radius > radius0-0.000001));
     medialPoint = std::make_tuple(pM, std::abs(radius), Geometry::angleBetweenVectors(pA-pM, pB-pM));
     pointB = pB;
@@ -90,7 +97,8 @@ int MedialAxis::genMedialPoint(std::tuple<Eigen::Vector3d, double, double>& medi
 
 }
 
-int MedialAxis::genMedialPoints(std::vector< std::tuple<Eigen::Vector3d, double, double> >& medialPoints)
+int MedialAxis::genMedialPoints(std::vector< std::tuple<Eigen::Vector3d, double, double> >& medialPoints,
+                                int randBMode, double minradius)
 {
     medialPoints.clear();
     Eigen::Vector3d pB = positions[1];
@@ -99,7 +107,7 @@ int MedialAxis::genMedialPoints(std::vector< std::tuple<Eigen::Vector3d, double,
         Eigen::Vector3d nA = normals[a];
         Eigen::Vector3d pB_;
         std::tuple<Eigen::Vector3d, double, double> pM;
-        if(genMedialPoint(pM, pB_, pA, nA, pB)==0){
+        if(genMedialPoint(pM, pB_, a, -1, randBMode, minradius)==0){
             medialPoints.push_back(pM);
             pB = pB_;
         }

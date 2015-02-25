@@ -27,17 +27,17 @@ TEST(MedialAxis)
         Eigen::Vector3d pB;
         if(medialAxis.genMedialPoint(pM, pB, i, i+1)!=0)
             continue;
-        std::vector< std::vector< std::pair<Eigen::Vector3d, double> > > outFlann3D, outNaiveNN3D;
+        std::vector< std::vector< std::tuple<Eigen::Vector3d, int, double> > > outFlann3D, outNaiveNN3D;
         std::vector<Eigen::Vector3d> queries;
         queries.push_back(std::get<0>(pM));
         flann3D.knnSearch(queries, outFlann3D, 2);
         naiveNN3D.knnSearch(queries, outNaiveNN3D, 2);
         CHECK_CLOSE((pA-std::get<0>(pM)).norm(), (pB-std::get<0>(pM)).norm(), 0.000001);
         CHECK_CLOSE((pA-std::get<0>(pM)).norm(), std::get<1>(pM), 0.000001);
-        CHECK_CLOSE(outFlann3D[0][0].second, outFlann3D[0][1].second, 0.000001);
-        CHECK_CLOSE(outFlann3D[0][0].second, (pA-std::get<0>(pM)).norm(), 0.000001);
-        CHECK_CLOSE(outNaiveNN3D[0][0].second, outNaiveNN3D[0][1].second, 0.000001);
-        CHECK_CLOSE(outNaiveNN3D[0][0].second, (pA-std::get<0>(pM)).norm(), 0.000001);
+        CHECK_CLOSE(std::get<2>(outFlann3D[0][0]), std::get<2>(outFlann3D[0][1]), 0.000001);
+        CHECK_CLOSE(std::get<2>(outFlann3D[0][0]), (pA-std::get<0>(pM)).norm(), 0.000001);
+        CHECK_CLOSE(std::get<2>(outNaiveNN3D[0][0]), std::get<2>(outNaiveNN3D[0][1]), 0.000001);
+        CHECK_CLOSE(std::get<2>(outNaiveNN3D[0][0]), (pA-std::get<0>(pM)).norm(), 0.000001);
     }
 
 }

@@ -13,6 +13,7 @@
 #include "Timer.h"
 #include "dae/DaeHeuristic.h"
 #include <climits>
+#include "MedialAxis.h"
 
 using namespace std;
 
@@ -44,12 +45,18 @@ bool canOpenFile(const char* filename)
 
 void graspSynthesis(int argc,char *argv[]);
 
+void genMedialAxis(int argc,char *argv[]);
+
 int main(int argc,char *argv[])
 {
     if(argc > 1){
         if(cmdOptionExists(argv, argv+argc, "synthesis"))
         {
             graspSynthesis(argc, argv);
+        }
+        else if(cmdOptionExists(argv, argv+argc, "medialaxis"))
+        {
+            genMedialAxis(argc, argv);
         }
     }
     else{
@@ -132,6 +139,7 @@ void graspSynthesis(int argc,char *argv[])
     //-mindist
     bool isMindist = cmdOptionExists(argv, argv+argc, "-mindist");
 
+    //// MODE
     //-randomgrasp
     bool isRandomgrasp = cmdOptionExists(argv, argv+argc, "-randomgrasp");
     std::uniform_int_distribution<int> randSurfacePoint(0,osp.surfacePoints.size()-1);
@@ -197,15 +205,44 @@ void graspSynthesis(int argc,char *argv[])
     if(isSizeAABB) sizeAABB = atof(getCmdOption(argv, argv + argc, "-sizeAABB"));
     Eigen::Vector3d startStepPoint = osp.minAABB + (osp.minAABB-osp.cm)*(sizeAABB-1.);
     Eigen::Vector3d endStepPoint = osp.maxAABB + (osp.maxAABB-osp.cm)*(sizeAABB-1.);
-    Eigen::Vector3d diffAABB = endStepPoint - startStepPoint;
-    double volumnAABB = fabs(diffAABB.x() * diffAABB.y() * diffAABB.z());
-    double stepLength = pow(volumnAABB/nStepPoints, 1.d/3.d);
+    Eigen::Vector3d diffBox = endStepPoint - startStepPoint;
+    double volumnBox = fabs(diffBox.x() * diffBox.y() * diffBox.z());
+    double stepLength = pow(volumnBox/nStepPoints, 1.d/3.d);
     bool isStepB = cmdOptionExists(argv, argv+argc, "-stepb");
     if(isStepB){
         startStepPoint -= Eigen::Vector3d(stepLength/2, stepLength/2, stepLength/2);
         endStepPoint += Eigen::Vector3d(stepLength/2, stepLength/2, stepLength/2);
     }
     Eigen::Vector3d currentStepPoint = startStepPoint;
+
+    //medialpoint
+    MedialAxis medialAxis;
+    std::vector<bool> usedMedialpoint;
+    usedMedialpoint.resize(osp.surfacePoints.size());
+    Eigen::Vector3d diffAABB = osp.maxAABB - osp.minAABB;
+    double minwidth = std::min(std::abs(diffAABB.x()), std::abs(diffAABB.y()));
+    minwidth = std::min(minwidth, std::abs(diffAABB.z()));
+    std::normal_distribution<double> rerandMedialPoint(0.d, minwidth*0.2);
+    int countUsedMedialpoint = 0;
+
+    //-medialpoint
+    bool isMedialpoint = cmdOptionExists(argv, argv+argc, "-medialpoint");
+    std::tuple<Eigen::Vector3d, double, double> medialPoint;
+
+    //-allmedialpoints
+    bool isAllmedialpoints = cmdOptionExists(argv, argv+argc, "-allmedialpoints");
+    std::vector< std::tuple<Eigen::Vector3d, double, double> > allMedialPoints;
+    std::vector<double> accRadius;
+    std::uniform_real_distribution<double> randMedialPoint(0, 1);
+
+    //-randbmode
+    int randBMode = 1;
+    if(cmdOptionExists(argv, argv+argc, "-randbmode")) randBMode = atoi(getCmdOption(argv, argv+argc, "-randbmode"));
+    //-minradius
+    double minradius = 0;
+    if(cmdOptionExists(argv, argv+argc, "-minradius")) minradius = atof(getCmdOption(argv, argv+argc, "-minradius"));
+    minradius *= minwidth;
+
 
     //-rerandom
     bool isRerandom = cmdOptionExists(argv, argv+argc, "-rerandom");
@@ -236,6 +273,23 @@ void graspSynthesis(int argc,char *argv[])
     tmr.start("all");
     if(isConcurrent){
         tmr.reset();
+        if(isMedialpoint || isAllmedialpoints){
+            tmr.start("initMedialPoints");
+            medialAxis.setObject(osp);
+            if(isAllmedialpoints){
+                medialAxis.genMedialPoints(allMedialPoints, randBMode, minradius);
+                usedMedialpoint.resize(allMedialPoints.size());
+                accRadius.clear();
+                accRadius.push_back(0);
+                for(unsigned int i=0 ; i<allMedialPoints.size() ; ++i){
+                    accRadius.push_back(accRadius[i] + std::abs(std::get<1>(allMedialPoints[i])));
+                }
+                decltype(randMedialPoint.param()) new_range(0, accRadius[accRadius.size()-1]);
+                randMedialPoint.param(new_range);
+            }
+            tmr.pause("initMedialPoints");
+        }
+
         while(tmr.elapsed() < timelimit && nTestedPoint < pointslimit){
             Eigen::Vector3d concurrentPoint;
             if(isNearCM){
@@ -264,13 +318,53 @@ void graspSynthesis(int argc,char *argv[])
                 concurrentPoint = currentStepPoint;
                 currentStepPoint.z() += stepLength;
             }
+            else if(isMedialpoint){
+                tmr.start("genMedialPoint");
+                Eigen::Vector3d pB;
+                while(true){
+                    if(!isRerandom && countUsedMedialpoint > randSurfacePoint.max()){
+                        ++countUsedMedialpoint;
+                        break;
+                    }
+                    unsigned int iA = randSurfacePoint(rng);
+                    if(!isRerandom && usedMedialpoint[iA])
+                        continue;
+                    usedMedialpoint[iA] = true;
+                    ++countUsedMedialpoint;
+                    if(medialAxis.genMedialPoint(medialPoint, pB, iA, -1, randBMode, minradius) == 0 || isRerandom)
+                        break;
+                }
+                if(!isRerandom && countUsedMedialpoint > randSurfacePoint.max()+1)
+                    break;
+                concurrentPoint = std::get<0>(medialPoint);
+                tmr.pause("genMedialPoint");
+            }
+            else if(isAllmedialpoints){
+                if(!isRerandom && countUsedMedialpoint > randSurfacePoint.max())
+                    break;
+                int iMedialPoint;
+                do{
+                    auto lower = std::lower_bound(accRadius.begin(), accRadius.end(), randMedialPoint(rng));
+                    iMedialPoint = lower - accRadius.begin();
+                }while(!isRerandom && usedMedialpoint[iMedialPoint]);
+                usedMedialpoint[iMedialPoint] = true;
+                medialPoint = allMedialPoints[iMedialPoint];
+                concurrentPoint = std::get<0>(medialPoint);
+            }
             else{
                 std::cout << "Please specify concurrent points sampling method." << std::endl;
                 return;
             }
 
             if(isRerandom){
-                concurrentPoint += Eigen::Vector3d(rerandNX(rng), rerandNY(rng), rerandNZ(rng));
+                if(isMedialpoint || isAllmedialpoints){
+                decltype(rerandMedialPoint.param()) new_range(0, std::get<1>(medialPoint)/rerandomSdDivider );
+                rerandMedialPoint.param(new_range);
+                    concurrentPoint += Eigen::Vector3d(rerandMedialPoint(rng), rerandMedialPoint(rng), rerandMedialPoint(rng));
+                }
+                else{
+                    concurrentPoint += Eigen::Vector3d(rerandNX(rng), rerandNY(rng), rerandNZ(rng));
+                }
             }
 
             tmr.start("one iterate");
@@ -383,6 +477,74 @@ void graspSynthesis(int argc,char *argv[])
     std::cout << filename << std::endl;
     std::cout << "nSols : " << nSols << ", nTestedPoint : " << nTestedPoint << std::endl;
     tmr.pause("all");
+    outFile << "-------------------\n";
+    outFile << tmr.strStopwatch();
+    outFile.close();
+}
+
+
+void genMedialAxis(int argc,char *argv[])
+{
+    //open input file
+    ObjectSurfacePoints osp;
+    if(cmdOptionExists(argv, argv+argc, "-obj")) {
+        char * filename = getCmdOption(argv, argv + argc, "-obj");
+        if(!canOpenFile(filename)) return;
+        OBJFile obj(filename);
+        osp.open(obj);
+    }
+    else if(cmdOptionExists(argv, argv+argc, "-pnf")) {
+        char * filename = getCmdOption(argv, argv + argc, "-pnf");
+        if(!canOpenFile(filename)) return;
+        PositionsNormalsFile obj(filename);
+        osp.open(obj);
+    }
+    else {
+        std::cout << "not found input flag -obj or -pnf" << std::endl;
+        return;
+    }
+
+    //open output file
+    char* filename;
+    std::ofstream outFile;
+    if(cmdOptionExists(argv, argv+argc, "-o")) {
+        filename = getCmdOption(argv, argv + argc, "-o");
+        outFile.open(filename);
+        outFile.unsetf ( std::ios::floatfield );
+        outFile.precision(std::numeric_limits<double>::digits10);
+        if(!outFile.is_open()){
+            std::cout << "! Can't open " << filename << std::endl;
+            return;
+        }
+    }
+    else {
+        std::cout << "not found output flag -o" << std::endl;
+        return;
+    }
+
+    int nnMode = 1;
+    if(cmdOptionExists(argv, argv+argc, "-nnMode")) {
+        nnMode = atoi(getCmdOption(argv, argv + argc, "-nnMode"));
+    }
+
+    int randBMode = 1;
+    if(cmdOptionExists(argv, argv+argc, "-randBMode")) {
+        randBMode = atoi(getCmdOption(argv, argv + argc, "-randBMode"));
+    }
+
+    Timer tmr;
+    tmr.start("genAllMedialPoints");
+    MedialAxis medialAxis(osp, nnMode);
+    std::vector< std::tuple<Eigen::Vector3d, double, double> > medialPoints;
+    medialAxis.genMedialPoints(medialPoints, randBMode);
+    tmr.pause("genAllMedialPoints");
+    for(unsigned int i=0 ; i< medialPoints.size() ; ++i){
+        auto mp = medialPoints[i];
+        outFile << "mp " << std::get<0>(mp).x() << " " << std::get<0>(mp).y() << " " << std::get<0>(mp).z() << " "
+                    << std::get<1>(mp) << " " << std::get<2>(mp) << "\n";
+    }
+    std::cout << filename << std::endl;
+    std::cout << "genAllMedialPoints : " << tmr.getSec("genAllMedialPoints") << std::endl;
     outFile << "-------------------\n";
     outFile << tmr.strStopwatch();
     outFile.close();

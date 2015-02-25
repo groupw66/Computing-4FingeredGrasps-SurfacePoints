@@ -2,6 +2,7 @@
 #include "OBJFile.h"
 #include "Flann3D.h"
 #include "NaiveNN3D.h"
+#include "NearestNeighbor.h"
 #include "Timer.h"
 
 namespace
@@ -15,9 +16,12 @@ TEST(Flann3D_NaiveNN3D)
     //int nPoints = 400;
     //int nFacets = 798;
     tmr.reset();
-    Flann3D flann3D(obj.vertexs);
+    Flann3D flann3D_(obj.vertexs);
     printf("flann3D(obj.vertexs) : %lf\n", tmr.elapsed());
-    NaiveNN3D naiveNN3D(obj.vertexs);
+    NaiveNN3D naiveNN3D_(obj.vertexs);
+    NearestNeighbor *flann3D, *naiveNN3D;
+    flann3D = &flann3D_;
+    naiveNN3D = &naiveNN3D_;
 
     Eigen::Vector3d p(0,0,0);
     std::vector<Eigen::Vector3d> queries;
@@ -39,20 +43,20 @@ TEST(Flann3D_NaiveNN3D)
         queries.insert(queries.end(), queries2.begin(), queries2.end());
     }
 
-    std::vector< std::vector< std::pair<Eigen::Vector3d, double> > > outFlann3D, outNaiveNN3D;
+    std::vector< std::vector< std::tuple<Eigen::Vector3d, int, double> > > outFlann3D, outNaiveNN3D;
     unsigned int knn = 3;
     tmr.reset();
-    flann3D.knnSearch(queries, outFlann3D, knn);
+    flann3D->knnSearch(queries, outFlann3D, knn);
     printf("flann3D.knnSearch : %lf\n", tmr.elapsed());
     tmr.reset();
-    naiveNN3D.knnSearch(queries, outNaiveNN3D, knn);
+    naiveNN3D->knnSearch(queries, outNaiveNN3D, knn);
     printf("naiveNN3D.knnSearch : %lf\n", tmr.elapsed());
     CHECK_EQUAL(queries.size(), outFlann3D.size());
     CHECK_EQUAL(queries.size(), outNaiveNN3D.size());
     for(unsigned int i=0 ; i<queries.size() ; ++i){
         for(unsigned int j=0 ; j<knn ; ++j){
-            CHECK_EQUAL(outFlann3D[i][j].first, outNaiveNN3D[i][j].first);
-            CHECK_CLOSE(outFlann3D[i][j].second, outNaiveNN3D[i][j].second, 0.0000001);
+            CHECK_EQUAL(std::get<0>(outFlann3D[i][j]), std::get<0>(outNaiveNN3D[i][j]));
+            CHECK_CLOSE(std::get<2>(outFlann3D[i][j]), std::get<2>(outNaiveNN3D[i][j]), 0.0000001);
         }
     }
 }
