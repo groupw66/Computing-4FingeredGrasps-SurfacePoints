@@ -47,6 +47,8 @@ void graspSynthesis(int argc,char *argv[]);
 
 void genMedialAxis(int argc,char *argv[]);
 
+void computeMindist(int argc,char *argv[]);
+
 int main(int argc,char *argv[])
 {
     if(argc > 1){
@@ -57,6 +59,10 @@ int main(int argc,char *argv[])
         else if(cmdOptionExists(argv, argv+argc, "medialaxis"))
         {
             genMedialAxis(argc, argv);
+        }
+        else if(cmdOptionExists(argv, argv+argc, "mindist"))
+        {
+            computeMindist(argc, argv);
         }
     }
     else{
@@ -549,3 +555,116 @@ void genMedialAxis(int argc,char *argv[])
     outFile << tmr.strStopwatch();
     outFile.close();
 }
+
+void computeMindist(int argc, char* argv[])
+{
+    //open input file
+    std::ifstream inFile;
+    if(cmdOptionExists(argv, argv+argc, "-i")) {
+        char * filename = getCmdOption(argv, argv + argc, "-i");
+        inFile.open(filename);
+        if(!inFile.is_open()){
+            std::cout << "! Can't open " << filename << std::endl;
+            return;
+        }
+    }
+    else {
+        std::cout << "not found output flag -o" << std::endl;
+        return;
+    }
+
+    //open object file
+    ObjectSurfacePoints osp;
+    if(cmdOptionExists(argv, argv+argc, "-obj")) {
+        char * filename = getCmdOption(argv, argv + argc, "-obj");
+        if(!canOpenFile(filename)) return;
+        OBJFile obj(filename);
+        osp.open(obj);
+    }
+    else if(cmdOptionExists(argv, argv+argc, "-pnf")) {
+        char * filename = getCmdOption(argv, argv + argc, "-pnf");
+        if(!canOpenFile(filename)) return;
+        PositionsNormalsFile obj(filename);
+        osp.open(obj);
+    }
+    else {
+        std::cout << "not found input flag -obj or -pnf" << std::endl;
+        return;
+    }
+
+    //open output file
+    char* filename;
+    std::ofstream outFile;
+    if(cmdOptionExists(argv, argv+argc, "-o")) {
+        filename = getCmdOption(argv, argv + argc, "-o");
+        outFile.open(filename);
+        outFile.unsetf ( std::ios::floatfield );
+        outFile.precision(std::numeric_limits<double>::digits10);
+        if(!outFile.is_open()){
+            std::cout << "! Can't open " << filename << std::endl;
+            return;
+        }
+    }
+    else {
+        std::cout << "not found output flag -o" << std::endl;
+        return;
+    }
+
+    //half angle
+    double halfangle = 10.0d;
+    if(cmdOptionExists(argv, argv+argc, "-halfangle")) {
+        halfangle = atof(getCmdOption(argv, argv + argc, "-halfangle"));
+    }
+
+    Timer tmr;
+    std::vector<std::string> outStrings;
+    std::vector<double> mindists;
+    tmr.start("all");
+    while(!inFile.eof())
+    {
+        std::string line;
+        getline(inFile, line);
+        std::stringstream ss(line);
+        std::string tmp;
+        ss >> tmp;
+        if(tmp == "g"){
+            int a, b, c, d;
+            ss >> a >> b >> c >> d;
+            tmr.start("getMindist_ZC");
+            double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
+                                                         osp.surfacePoints[c], osp.surfacePoints[d],
+                                                         Eigen::Vector3d(0,0,0), halfangle);
+            tmr.pause("getMindist_ZC");
+            char tmpOut[1000];
+            sprintf(tmpOut, "g %d %d %d %d %lf", a, b, c, d, mindist);
+            outStrings.push_back(std::string(tmpOut));
+            mindists.push_back(mindist);
+        }
+        else{
+            outStrings.push_back(line);
+        }
+    }
+    double sum = std::accumulate(std::begin(mindists), std::end(mindists), 0.0);
+    double m =  sum / mindists.size();
+
+    double accum = 0.0;
+    std::for_each (std::begin(mindists), std::end(mindists), [&](const double d) {
+        accum += (d - m) * (d - m);
+    });
+
+    double stdev = sqrt(accum / (mindists.size()-1));
+    outFile << "mean " << m << "\n";
+    outFile << "stdev " << stdev << "\n";
+
+    for(unsigned int i=0; i<outStrings.size() ; ++i){
+        outFile << outStrings[i] << "\n";
+    }
+    std::cout << filename << std::endl;
+    std::cout << "mean " << m << " ; stdev " << stdev << "\n";
+    tmr.pause("all");
+    outFile << "-------------------\n";
+    outFile << tmr.strStopwatch();
+    outFile.close();
+    inFile.close();
+}
+
