@@ -616,6 +616,16 @@ void computeMindist(int argc, char* argv[])
         halfangle = atof(getCmdOption(argv, argv + argc, "-halfangle"));
     }
 
+    //limit by ...
+    double timelimit = 3.15569e7d;
+    if(cmdOptionExists(argv, argv+argc, "-timelimit")) {
+        timelimit = atof(getCmdOption(argv, argv + argc, "-timelimit"));
+    }
+    int pointslimit = INT_MAX;
+    if(cmdOptionExists(argv, argv+argc, "-pointslimit")) {
+        pointslimit = atoi(getCmdOption(argv, argv + argc, "-pointslimit"));
+    }
+
     Timer tmr;
     std::vector<std::string> outStrings;
     std::vector<double> mindists;
@@ -629,14 +639,18 @@ void computeMindist(int argc, char* argv[])
         ss >> tmp;
         if(tmp == "g"){
             int a, b, c, d;
-            ss >> a >> b >> c >> d;
+            double mindist, timestamp;
+            ss >> a >> b >> c >> d >> mindist >> timestamp;
+            if(timestamp > timelimit){
+                break;
+            }
             tmr.start("getMindist_ZC");
-            double mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
+            mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
                                                          osp.surfacePoints[c], osp.surfacePoints[d],
                                                          Eigen::Vector3d(0,0,0), halfangle);
             tmr.pause("getMindist_ZC");
             char tmpOut[1000];
-            sprintf(tmpOut, "g %d %d %d %d %lf", a, b, c, d, mindist);
+            sprintf(tmpOut, "g %d %d %d %d %lf %lf", a, b, c, d, mindist, timestamp);
             outStrings.push_back(std::string(tmpOut));
             mindists.push_back(mindist);
         }
