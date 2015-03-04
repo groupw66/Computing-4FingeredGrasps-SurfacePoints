@@ -597,6 +597,10 @@ void computeMindist(int argc, char* argv[])
     std::ofstream outFile;
     if(cmdOptionExists(argv, argv+argc, "-o")) {
         filename = getCmdOption(argv, argv + argc, "-o");
+        if(strcmp(filename, getCmdOption(argv, argv + argc, "-i"))==0){
+            std::cout << "input and output can not be the same:" << filename << std::endl;
+            return;
+        }
         outFile.open(filename);
         outFile.unsetf ( std::ios::floatfield );
         outFile.precision(std::numeric_limits<double>::digits10);
@@ -626,6 +630,38 @@ void computeMindist(int argc, char* argv[])
         pointslimit = atoi(getCmdOption(argv, argv + argc, "-pointslimit"));
     }
 
+    //open mindistDB file
+    std::unordered_map<std::string, double> mindistDB;
+    bool isMindistdb = cmdOptionExists(argv, argv+argc, "-mindistdb");
+    bool isUpdateMindistdb = false;
+    char* dbfilename = "";
+    std::fstream dbFile;
+    if(isMindistdb) {
+        dbfilename = getCmdOption(argv, argv + argc, "-mindistdb");
+        dbFile.open(dbfilename);
+        dbFile.unsetf ( std::ios::floatfield );
+        dbFile.precision(std::numeric_limits<double>::digits10);
+        if(!dbFile.is_open()){
+            std::cout << "! Can't open " << dbfilename << std::endl;
+            return;
+        }
+        while(!dbFile.eof())
+        {
+            std::string line;
+            getline(dbFile, line);
+            std::stringstream ss(line);
+            std::string tmp;
+            ss >> tmp;
+            if(tmp == "g"){
+                int a, b, c, d;
+                double mindist;
+                ss >> a >> b >> c >> d >> mindist;
+                mindistDB[Grasp(a,b,c,d).to_str()] = mindist;
+            }
+        }
+        dbFile.close();
+    }
+
     Timer tmr;
     std::vector<std::string> outStrings;
     std::vector<double> mindists;
@@ -644,11 +680,22 @@ void computeMindist(int argc, char* argv[])
             if(timestamp > timelimit){
                 break;
             }
-            tmr.start("getMindist_ZC");
-            mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
-                                                         osp.surfacePoints[c], osp.surfacePoints[d],
-                                                         Eigen::Vector3d(0,0,0), halfangle);
-            tmr.pause("getMindist_ZC");
+            Grasp g(a,b,c,d);
+            auto it = mindistDB.find(g.to_str()) ;
+            if(it == mindistDB.end()){
+                if(mindist < 0.){
+                    tmr.start("getMindist_ZC");
+                    mindist = ForceClosure::getMindist_ZC(osp.surfacePoints[a], osp.surfacePoints[b],
+                                                                 osp.surfacePoints[c], osp.surfacePoints[d],
+                                                                 Eigen::Vector3d(0,0,0), halfangle);
+                    tmr.pause("getMindist_ZC");
+                }
+                mindistDB[g.to_str()] = mindist;
+                isUpdateMindistdb = true;
+            }
+            else{
+                mindist = it->second;
+            }
             char tmpOut[1000];
             sprintf(tmpOut, "g %d %d %d %d %lf %lf", a, b, c, d, mindist, timestamp);
             outStrings.push_back(std::string(tmpOut));
@@ -680,5 +727,17 @@ void computeMindist(int argc, char* argv[])
     outFile << tmr.strStopwatch();
     outFile.close();
     inFile.close();
+
+    if(isMindistdb && isUpdateMindistdb){
+        dbFile.open(dbfilename, std::fstream::out);
+        if(!dbFile.is_open()){
+            std::cout << "! Can't open " << dbfilename << std::endl;
+            return;
+        }
+        for ( auto it = mindistDB.begin(); it != mindistDB.end(); ++it ){
+            dbFile << "g " << it->first << " " << it->second << "\n";
+        }
+        dbFile.close();
+    }
 }
 
